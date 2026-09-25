@@ -133,7 +133,7 @@ export type UserRole =
 export const ROLE_LABEL: Record<UserRole, string> = {
   SYSTEM_ADMIN: "시스템관리자",
   MEETING_OWNER: "모임관리자",
-  MEETING_ADMIN: "운영관리자",
+  MEETING_ADMIN: "총무",
   MEMBER: "일반회원",
 };
 

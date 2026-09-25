@@ -41,9 +41,8 @@ export default function LoginPage() {
         </div>
 
         <ul className="mt-8 space-y-2 text-xs leading-5 text-zinc-500">
-          <li>· 프로젝트: <code className="text-zinc-300">smartexpense-55679</code></li>
-          <li>· Google 로그인만 지원 (웹 1단계)</li>
-          <li>· Firestore 규칙·권한은 앱과 동일하게 적용</li>
+          <li>· Google 계정으로만 로그인할 수 있습니다</li>
+          <li>· Firestore 규칙·권한은 앱과 동일하게 적용됩니다</li>
         </ul>
       </main>
     </div>

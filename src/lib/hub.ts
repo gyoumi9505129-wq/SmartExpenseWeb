@@ -221,7 +221,8 @@ export async function approveJoinRequest(params: {
     status: "APPROVED",
     decidedAt: new Date().toISOString(),
     decidedBy: params.decidedByUid,
-    profileCompleted: false,
+    // 승인 즉시 일반 회원 — 가입정보 입력 생략
+    profileCompleted: true,
   });
   await updateDoc(doc(db, COLLECTIONS.MEETINGS, params.meetingId), {
     sharedWith: arrayUnion(params.request.uid),

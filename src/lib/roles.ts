@@ -10,7 +10,7 @@ export function isSystemAdmin(email: string | null | undefined): boolean {
 
 /**
  * Android UserRole / MeetingRoleRepository 와 동일한 우선순위
- * 시스템관리자 > 개설자 > 지정 운영관리자 > 일반회원
+ * 시스템관리자 > 개설자(모임관리자) > 지정 총무 > 일반회원
  */
 export function resolveRole(
   uid: string | null | undefined,
