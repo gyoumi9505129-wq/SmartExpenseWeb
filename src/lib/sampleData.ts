@@ -24,7 +24,7 @@ export const SAMPLE_MEETING: Meeting = {
 export const SAMPLE_MEMBERS: Member[] = [
   {
     id: "s1",
-    name: "강대화",
+    name: "가람",
     status: "ACTIVE",
     joinDate: "2011-10-01",
     phone: "01000000001",
@@ -35,7 +35,7 @@ export const SAMPLE_MEMBERS: Member[] = [
   },
   {
     id: "s2",
-    name: "김민석",
+    name: "나현",
     status: "ACTIVE",
     joinDate: "2012-03-15",
     phone: "01000000002",
@@ -46,7 +46,7 @@ export const SAMPLE_MEMBERS: Member[] = [
   },
   {
     id: "s3",
-    name: "김성겸",
+    name: "다솔",
     status: "ACTIVE",
     joinDate: "2011-10-01",
     phone: "01000000003",
@@ -63,7 +63,7 @@ export const SAMPLE_TRANSACTIONS: Transaction[] = [
     date: "2026-07-12",
     type: "INCOME",
     category: "정기 회비 (월/연회비)",
-    description: "김영섭 회비(25년_하반기,26년_상반기)",
+    description: "가람 회비(25년_하반기,26년_상반기)",
     amount: 300000,
     incomeAmount: 300000,
     expenseAmount: 0,
@@ -100,7 +100,7 @@ export const SAMPLE_DUES: DuesRecord[] = [
   {
     id: "sd1",
     memberId: "s1",
-    memberName: "강대화",
+    memberName: "가람",
     year: 2026,
     totalTargetAmount: 300000,
     paymentMethod: "HALF_YEARLY",
@@ -132,7 +132,7 @@ export const SAMPLE_DUES: DuesRecord[] = [
   {
     id: "sd2",
     memberId: "s2",
-    memberName: "김민석",
+    memberName: "나현",
     year: 2026,
     totalTargetAmount: 300000,
     paymentMethod: "HALF_YEARLY",
