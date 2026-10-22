@@ -13,6 +13,8 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
+import { isPrimaryMeetingName } from "./primaryMeeting";
+import { isHanuriSharedViewer } from "./roles";
 import type { DirectoryMeeting, JoinRequest, Meeting, UserProfile } from "./types";
 import { mapMeeting } from "./meetings";
 
@@ -119,6 +121,43 @@ export async function claimPendingEmailInvites(
     }
   }
   return claimed;
+}
+
+/**
+ * 한우리 공용 계정: 승인 없이 sharedWith에 본인을 넣어 조회 권한을 확보.
+ * Android ensureHanuriSharedViewerAccess / firestore.rules 와 동일.
+ */
+export async function ensureHanuriSharedViewerAccess(
+  uid: string,
+  email: string | null | undefined
+): Promise<number> {
+  if (!isHanuriSharedViewer(email) || !uid) return 0;
+  const snap = await getDocs(collection(getFirebaseDb(), COLLECTIONS.MEETINGS));
+  let granted = 0;
+  for (const d of snap.docs) {
+    const name = asString(d.data().name);
+    if (!isPrimaryMeetingName(name)) continue;
+    const shared = Array.isArray(d.data().sharedWith)
+      ? (d.data().sharedWith as unknown[]).filter(
+          (x): x is string => typeof x === "string"
+        )
+      : [];
+    if (shared.includes(uid)) {
+      granted += 1;
+      continue;
+    }
+    try {
+      await updateDoc(d.ref, {
+        sharedWith: arrayUnion(uid),
+        inactiveMemberUids: arrayRemove(uid),
+        [`inactiveMemberReasons.${uid}`]: deleteField(),
+      });
+      granted += 1;
+    } catch {
+      // rules 등으로 실패하면 건너뜀
+    }
+  }
+  return granted;
 }
 
 export async function submitJoinRequest(params: {

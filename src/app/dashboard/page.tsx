@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthProvider";
 import { resolvePrimaryMeeting } from "@/lib/access";
+import { ensureHanuriSharedViewerAccess } from "@/lib/hub";
 import { canAccessMeeting } from "@/lib/roles";
 import { SAMPLE_MEETING_ID } from "@/lib/sampleData";
 
 /**
  * 로그인 후 단일 모임으로 진입.
- * - 승인·멤버십 있음 → 실데이터
- * - 없으면 → 샘플 화면
+ * - 관리자·승인 회원·한우리 공용 → 실데이터
+ * - 미승인 일반회원 → 샘플 화면
  */
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -26,6 +27,7 @@ export default function DashboardPage() {
     let cancelled = false;
     (async () => {
       try {
+        await ensureHanuriSharedViewerAccess(user.uid, user.email);
         const meeting = await resolvePrimaryMeeting();
         if (cancelled) return;
         if (

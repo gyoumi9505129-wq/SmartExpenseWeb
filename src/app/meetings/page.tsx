@@ -15,6 +15,7 @@ import {
   requestAccess,
   resolvePrimaryMeeting,
 } from "@/lib/access";
+import { ensureHanuriSharedViewerAccess } from "@/lib/hub";
 import { computeOperatingBalance } from "@/lib/balance";
 import { fetchDues } from "@/lib/dues";
 import { fetchEventExpenses } from "@/lib/eventExpenses";
@@ -25,7 +26,12 @@ import {
   fetchMembers,
   fetchTransactions,
 } from "@/lib/meetings";
-import { canAccessMeeting, canEditMeeting, resolveRole } from "@/lib/roles";
+import {
+  canAccessMeeting,
+  canEditMeeting,
+  isHanuriSharedViewer,
+  resolveRole,
+} from "@/lib/roles";
 import {
   SAMPLE_DUES,
   SAMPLE_MEETING,
@@ -76,6 +82,7 @@ function MeetingDetailInner() {
     setBusy(true);
     setError(null);
     try {
+      await ensureHanuriSharedViewerAccess(user.uid, user.email);
       if (isSample) {
         let primary = realIdHint
           ? await fetchMeeting(realIdHint)
@@ -244,7 +251,7 @@ function MeetingDetailInner() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isSample ? (
+            {isSample && !isHanuriSharedViewer(user.email) ? (
               <button
                 type="button"
                 disabled={actionBusy || pendingRequest || !realMeeting}

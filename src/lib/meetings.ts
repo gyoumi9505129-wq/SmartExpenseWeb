@@ -10,7 +10,8 @@ import {
 import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import type { Meeting, Member, Transaction, UserProfile } from "./types";
-import { canAccessMeeting, isSystemAdmin } from "./roles";
+import { isPrimaryMeetingName } from "./primaryMeeting";
+import { canAccessMeeting, isHanuriSharedViewer, isSystemAdmin } from "./roles";
 
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -97,6 +98,15 @@ export async function fetchAccessibleMeetings(
   );
   for (const d of adminSnap.docs) {
     byId.set(d.id, mapMeeting(d.id, d.data()));
+  }
+
+  // 한우리 공용: sharedWith 반영 전이라도 한우리 실데이터 목록에 포함
+  if (isHanuriSharedViewer(email)) {
+    const all = await getDocs(meetingsRef);
+    for (const d of all.docs) {
+      const m = mapMeeting(d.id, d.data());
+      if (isPrimaryMeetingName(m.name)) byId.set(d.id, m);
+    }
   }
 
   return [...byId.values()]
