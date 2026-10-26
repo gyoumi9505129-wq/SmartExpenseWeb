@@ -23,6 +23,7 @@ export function MeetingHistoryDialog({
   onChanged,
 }: Props) {
   const [histories, setHistories] = useState<ClubHistoryRow[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [histDate, setHistDate] = useState(todayIsoDate());
   const [histContent, setHistContent] = useState("");
   const [histDetails, setHistDetails] = useState("");
@@ -40,6 +41,22 @@ export function MeetingHistoryDialog({
       setError(e instanceof Error ? e.message : "이력을 불러오지 못했습니다.")
     );
   }, [reload]);
+
+  function resetForm() {
+    setEditingId(null);
+    setHistDate(todayIsoDate());
+    setHistContent("");
+    setHistDetails("");
+  }
+
+  function startEdit(row: ClubHistoryRow) {
+    setError(null);
+    setInfo(null);
+    setEditingId(row.id);
+    setHistDate(historyDateToIso(row.date) || todayIsoDate());
+    setHistContent(row.content || "");
+    setHistDetails(row.details || "");
+  }
 
   async function run(action: () => Promise<void>, okMessage: string) {
     setBusy(true);
@@ -77,7 +94,7 @@ export function MeetingHistoryDialog({
                 모임 이력 관리
               </h3>
               <p className="mt-1 text-sm text-zinc-500">
-                창단·회장 선출·회원 변동 등 모임 이력을 추가·삭제합니다.
+                창단·회장 선출·회원 변동 등 모임 이력을 추가·수정·삭제합니다.
               </p>
             </div>
             <button
@@ -131,30 +148,46 @@ export function MeetingHistoryDialog({
               />
             </label>
           </div>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              const dateIso = normalizeIsoDateInput(histDate);
-              if (!dateIso) {
-                setError("일자는 YYYY-MM-DD 또는 YYYYMMDD 로 입력해 주세요.");
-                return;
-              }
-              void run(async () => {
-                await upsertHistory(meetingId, {
-                  dateIso,
-                  content: histContent,
-                  details: histDetails,
-                });
-                setHistDate(todayIsoDate());
-                setHistContent("");
-                setHistDetails("");
-              }, "이력을 추가했습니다.");
-            }}
-            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-          >
-            이력 추가
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                const dateIso = normalizeIsoDateInput(histDate);
+                if (!dateIso) {
+                  setError("일자는 YYYY-MM-DD 또는 YYYYMMDD 로 입력해 주세요.");
+                  return;
+                }
+                const isEdit = Boolean(editingId);
+                void run(async () => {
+                  await upsertHistory(meetingId, {
+                    id: editingId || undefined,
+                    dateIso,
+                    content: histContent,
+                    details: histDetails,
+                  });
+                  resetForm();
+                }, isEdit ? "이력을 수정했습니다." : "이력을 추가했습니다.");
+              }}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+            >
+              {editingId ? "이력 수정" : "이력 추가"}
+            </button>
+            {editingId ? (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  resetForm();
+                  setInfo(null);
+                  setError(null);
+                }}
+                className="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 disabled:opacity-50"
+              >
+                수정 취소
+              </button>
+            ) : null}
+          </div>
 
           <div className="overflow-x-auto rounded-xl border border-zinc-100">
             <table className="min-w-full text-left text-sm">
@@ -163,12 +196,19 @@ export function MeetingHistoryDialog({
                   <th className="whitespace-nowrap px-3 py-2">일자</th>
                   <th className="px-3 py-2">내용</th>
                   <th className="px-3 py-2">상세</th>
-                  <th className="w-14 px-3 py-2 text-right"> </th>
+                  <th className="w-24 whitespace-nowrap px-3 py-2 text-right">
+                    {" "}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
                 {histories.map((h) => (
-                  <tr key={h.id} className="align-top text-zinc-800">
+                  <tr
+                    key={h.id}
+                    className={`align-top text-zinc-800 ${
+                      editingId === h.id ? "bg-emerald-50/60" : ""
+                    }`}
+                  >
                     <td className="whitespace-nowrap px-3 py-2 font-medium">
                       {historyDateToIso(h.date)}
                     </td>
@@ -176,20 +216,31 @@ export function MeetingHistoryDialog({
                     <td className="px-3 py-2 text-zinc-600">
                       {h.details || "—"}
                     </td>
-                    <td className="px-3 py-2 text-right">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          run(
-                            () => deleteHistory(meetingId, h.id),
-                            "이력을 삭제했습니다."
-                          )
-                        }
-                        className="text-xs text-red-600 disabled:opacity-50"
-                      >
-                        삭제
-                      </button>
+                    <td className="whitespace-nowrap px-3 py-2 text-right">
+                      <div className="inline-flex gap-2">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => startEdit(h)}
+                          className="text-xs text-emerald-700 disabled:opacity-50"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            if (editingId === h.id) resetForm();
+                            void run(
+                              () => deleteHistory(meetingId, h.id),
+                              "이력을 삭제했습니다."
+                            );
+                          }}
+                          className="text-xs text-red-600 disabled:opacity-50"
+                        >
+                          삭제
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
