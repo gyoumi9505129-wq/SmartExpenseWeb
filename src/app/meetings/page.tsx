@@ -337,7 +337,10 @@ function MeetingDetailInner() {
             <button
               key={id}
               type="button"
-              onClick={() => setTab(id)}
+              onClick={() => {
+                setTab(id);
+                void reload();
+              }}
               className={`shrink-0 px-3 py-2 text-sm font-medium sm:px-4 ${
                 tab === id
                   ? "border-b-2 border-emerald-600 text-emerald-700"
@@ -353,8 +356,12 @@ function MeetingDetailInner() {
           <p className="mt-8 text-sm text-zinc-500">데이터 로딩 중…</p>
         ) : (
           <>
-            <div className={tab === "ledger" ? undefined : "hidden"}>
+            {busy ? (
+              <p className="mt-3 text-xs text-zinc-400">최신 데이터 불러오는 중…</p>
+            ) : null}
+            {tab === "ledger" ? (
               <LedgerPanel
+                key={`ledger-${transactions.length}-${balance}`}
                 meetingId={isSample ? SAMPLE_MEETING_ID : meetingIdParam}
                 rows={transactions}
                 members={members}
@@ -362,60 +369,65 @@ function MeetingDetailInner() {
                 canEdit={canEdit}
                 onChanged={reload}
               />
-            </div>
-            <div className={tab === "dues" ? undefined : "hidden"}>
+            ) : null}
+            {tab === "dues" ? (
               <DuesPanel
+                key={`dues-${meeting?.duesPaymentMethod || "HALF_YEARLY"}-${dues.length}`}
                 meetingId={isSample ? SAMPLE_MEETING_ID : meetingIdParam}
                 dues={dues}
                 members={members}
                 canEdit={canEdit}
-                defaultPaymentMethod={meeting?.duesPaymentMethod || "HALF_YEARLY"}
+                defaultPaymentMethod={
+                  meeting?.duesPaymentMethod || "HALF_YEARLY"
+                }
                 onChanged={reload}
               />
-            </div>
-            {meeting ? (
-              <div className={tab === "members" ? undefined : "hidden"}>
-                <MembersPanel
-                  meetingId={isSample ? SAMPLE_MEETING_ID : meetingIdParam}
-                  meeting={meeting}
-                  rows={members}
-                  canEdit={canEdit}
-                  onChanged={reload}
-                />
-              </div>
             ) : null}
-            <div className={tab === "events" ? undefined : "hidden"}>
+            {tab === "members" && meeting ? (
+              <MembersPanel
+                key={`members-${members.length}`}
+                meetingId={isSample ? SAMPLE_MEETING_ID : meetingIdParam}
+                meeting={meeting}
+                rows={members}
+                canEdit={canEdit}
+                onChanged={reload}
+              />
+            ) : null}
+            {tab === "events" ? (
               <EventsPanel
+                key={`events-${eventExpenses.length}`}
                 clubName={meeting?.name || "모임"}
                 eventExpenses={eventExpenses}
                 transactions={transactions}
                 members={members}
               />
-            </div>
-            <div className={tab === "report" ? undefined : "hidden"}>
+            ) : null}
+            {tab === "report" ? (
               <ReportPanel
+                key={`report-${transactions.length}-${dues.length}`}
                 transactions={transactions}
                 dues={dues}
                 initialBalance={meeting?.initialBalance ?? 0}
               />
-            </div>
-            {canManageAccounts && meeting && user ? (
-              <div className={tab === "admin" ? undefined : "hidden"}>
-                <AdminAccountsPanel
-                  meeting={meeting}
-                  myUid={user.uid}
-                  onMeetingChanged={reload}
-                />
-              </div>
             ) : null}
-            {canManageAccounts && meeting && !isSample ? (
-              <div className={tab === "settings" ? undefined : "hidden"}>
-                <SettingsPanel
-                  meetingId={meetingIdParam}
-                  meeting={meeting}
-                  onChanged={reload}
-                />
-              </div>
+            {tab === "admin" && canManageAccounts && meeting && user ? (
+              <AdminAccountsPanel
+                key={`admin-${meeting.id}`}
+                meeting={meeting}
+                myUid={user.uid}
+                onMeetingChanged={reload}
+              />
+            ) : null}
+            {tab === "settings" &&
+            canManageAccounts &&
+            meeting &&
+            !isSample ? (
+              <SettingsPanel
+                key={`settings-${meeting.duesPaymentMethod || "HALF_YEARLY"}`}
+                meetingId={meetingIdParam}
+                meeting={meeting}
+                onChanged={reload}
+              />
             ) : null}
           </>
         )}
