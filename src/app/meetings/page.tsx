@@ -250,9 +250,16 @@ function MeetingDetailInner() {
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div>
-            <h1 className="text-lg font-semibold">
-              {meeting?.name ?? (isSample ? SAMPLE_MEETING.name : "모임")}
-            </h1>
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <h1 className="text-lg font-semibold">
+                {meeting?.name ?? (isSample ? SAMPLE_MEETING.name : "모임")}
+              </h1>
+              {(meeting?.slogan || (isSample ? SAMPLE_MEETING.slogan : "")) ? (
+                <p className="text-sm text-zinc-600">
+                  {meeting?.slogan || SAMPLE_MEETING.slogan}
+                </p>
+              ) : null}
+            </div>
             <p className="text-xs text-zinc-500">
               {isSample
                 ? "샘플 · 조회만"
