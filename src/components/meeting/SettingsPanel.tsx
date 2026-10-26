@@ -23,6 +23,7 @@ import {
   upsertHistory,
 } from "@/lib/meetingSettings";
 import type { ClubAccountRow, ClubHistoryRow } from "@/lib/meetingBackup";
+import { todayIsoDate } from "@/lib/format";
 import type { Meeting } from "@/lib/types";
 
 type Props = {
@@ -39,7 +40,7 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
   );
   const [histories, setHistories] = useState<ClubHistoryRow[]>([]);
   const [accounts, setAccounts] = useState<ClubAccountRow[]>([]);
-  const [histDate, setHistDate] = useState("");
+  const [histDate, setHistDate] = useState(todayIsoDate());
   const [histContent, setHistContent] = useState("");
   const [histDetails, setHistDetails] = useState("");
   const [bankName, setBankName] = useState("");
@@ -179,25 +180,34 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
 
         <div className="mt-6 space-y-3 border-t border-zinc-100 pt-4">
           <h3 className="text-sm font-medium text-zinc-700">모임 이력 관리</h3>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <input
-              type="date"
-              value={histDate}
-              onChange={(e) => setHistDate(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
-            <input
-              value={histContent}
-              onChange={(e) => setHistContent(e.target.value)}
-              placeholder="내용 *"
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
-            <input
-              value={histDetails}
-              onChange={(e) => setHistDetails(e.target.value)}
-              placeholder="세부"
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="text-xs text-zinc-500">
+              일자
+              <input
+                type="date"
+                value={histDate}
+                onChange={(e) => setHistDate(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              내용 *
+              <input
+                value={histContent}
+                onChange={(e) => setHistContent(e.target.value)}
+                placeholder="내용"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              세부
+              <input
+                value={histDetails}
+                onChange={(e) => setHistDetails(e.target.value)}
+                placeholder="세부"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
           </div>
           <button
             type="button"
@@ -209,7 +219,7 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
                   content: histContent,
                   details: histDetails,
                 });
-                setHistDate("");
+                setHistDate(todayIsoDate());
                 setHistContent("");
                 setHistDetails("");
               }, "이력을 추가했습니다.")
