@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { AdminAccountsPanel } from "@/components/meeting/AdminAccountsPanel";
+import { ClubManagePanel } from "@/components/meeting/ClubManagePanel";
 import { DuesPanel } from "@/components/meeting/DuesPanel";
 import { EventsPanel } from "@/components/meeting/EventsPanel";
 import { LedgerPanel } from "@/components/meeting/LedgerPanel";
@@ -56,6 +57,7 @@ type Tab =
   | "members"
   | "events"
   | "report"
+  | "clubInfo"
   | "admin"
   | "settings";
 
@@ -337,7 +339,9 @@ function MeetingDetailInner() {
                     ["admin", "관리"],
                     ["settings", "설정"],
                   ] as const)
-                : []),
+                : !isSample
+                  ? ([["clubInfo", "관리"]] as const)
+                  : []),
             ] as const
           ).map(([id, label]) => (
             <button
@@ -414,6 +418,12 @@ function MeetingDetailInner() {
                 transactions={transactions}
                 dues={dues}
                 initialBalance={meeting?.initialBalance ?? 0}
+              />
+            ) : null}
+            {tab === "clubInfo" && !canManageAccounts && !isSample ? (
+              <ClubManagePanel
+                key={`clubInfo-${meetingIdParam}`}
+                meetingId={meetingIdParam}
               />
             ) : null}
             {tab === "admin" && canManageAccounts && meeting && user ? (
