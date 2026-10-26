@@ -327,8 +327,15 @@ export function DuesPanel({
       setError("목표 금액을 확인해 주세요.");
       return;
     }
-    if (isHalfYearly && (!firstHalfDate || !secondHalfDate)) {
+    if (
+      paymentMethodCode === "HALF_YEARLY" &&
+      (!firstHalfDate || !secondHalfDate)
+    ) {
       setError("상·하반기 납부일자를 입력해 주세요.");
+      return;
+    }
+    if (termDrafts.some((t) => !t.isExcluded && !t.payDate)) {
+      setError("회차별 납부일자를 입력해 주세요.");
       return;
     }
 
