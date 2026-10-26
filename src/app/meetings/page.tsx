@@ -9,6 +9,7 @@ import { EventsPanel } from "@/components/meeting/EventsPanel";
 import { LedgerPanel } from "@/components/meeting/LedgerPanel";
 import { MembersPanel } from "@/components/meeting/MembersPanel";
 import { ReportPanel } from "@/components/meeting/ReportPanel";
+import { SettingsPanel } from "@/components/meeting/SettingsPanel";
 import { useAuth } from "@/contexts/AuthProvider";
 import {
   fetchMyAccessRequest,
@@ -49,7 +50,14 @@ import {
   type Transaction,
 } from "@/lib/types";
 
-type Tab = "ledger" | "dues" | "members" | "events" | "report" | "admin";
+type Tab =
+  | "ledger"
+  | "dues"
+  | "members"
+  | "events"
+  | "report"
+  | "admin"
+  | "settings";
 
 function MeetingDetailInner() {
   const search = useSearchParams();
@@ -164,9 +172,11 @@ function MeetingDetailInner() {
 
   const canManageAccounts = !isSample && !!meeting && isSystemAdmin;
 
-  // 관리 탭이 없어졌는데 admin에 있으면 장부로
+  // 관리/설정 권한 없으면 해당 탭에서 이탈
   useEffect(() => {
-    if (!canManageAccounts && tab === "admin") setTab("ledger");
+    if (!canManageAccounts && (tab === "admin" || tab === "settings")) {
+      setTab("ledger");
+    }
   }, [canManageAccounts, tab]);
 
   const balance = useMemo(
@@ -317,7 +327,10 @@ function MeetingDetailInner() {
               ["events", "경조"],
               ["report", "결산"],
               ...(canManageAccounts
-                ? ([["admin", "관리"]] as const)
+                ? ([
+                    ["admin", "관리"],
+                    ["settings", "설정"],
+                  ] as const)
                 : []),
             ] as const
           ).map(([id, label]) => (
@@ -392,6 +405,15 @@ function MeetingDetailInner() {
                   meeting={meeting}
                   myUid={user.uid}
                   onMeetingChanged={reload}
+                />
+              </div>
+            ) : null}
+            {canManageAccounts && meeting && !isSample ? (
+              <div className={tab === "settings" ? undefined : "hidden"}>
+                <SettingsPanel
+                  meetingId={meetingIdParam}
+                  meeting={meeting}
+                  onChanged={reload}
                 />
               </div>
             ) : null}
