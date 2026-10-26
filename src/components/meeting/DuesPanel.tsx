@@ -8,6 +8,7 @@ import {
 } from "@/components/ListPagination";
 import { MemberDuesDetailDialog } from "@/components/meeting/MemberDuesDetailDialog";
 import { YearSelect } from "@/components/YearSelect";
+import { IsoDateField } from "@/components/IsoDateField";
 import {
   createOrUpdateDues,
   distributeDuesAmounts,
@@ -17,7 +18,7 @@ import {
   type DuesTermPaymentInput,
 } from "@/lib/dues";
 import { duesYearOptions } from "@/lib/duesSync";
-import { formatWon, todayIsoDate } from "@/lib/format";
+import { formatWon, normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
 import { buildMemberDuesSummaries } from "@/lib/memberDuesSummary";
 import type { DuesRecord, Member } from "@/lib/types";
 
@@ -334,8 +335,12 @@ export function DuesPanel({
       setError("상·하반기 납부일자를 입력해 주세요.");
       return;
     }
-    if (termDrafts.some((t) => !t.isExcluded && !t.payDate)) {
-      setError("회차별 납부일자를 입력해 주세요.");
+    if (
+      termDrafts.some(
+        (t) => !t.isExcluded && !normalizeIsoDateInput(t.payDate)
+      )
+    ) {
+      setError("회차별 납부일자는 YYYY-MM-DD 로 입력해 주세요.");
       return;
     }
 
@@ -609,15 +614,11 @@ export function DuesPanel({
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       <label className="text-xs text-zinc-500">
                         납부일자
-                        <input
-                          type="date"
+                        <IsoDateField
                           value={t.payDate}
-                          onChange={(e) =>
-                            updateTerm(t.termLabel, {
-                              payDate: e.target.value,
-                            })
+                          onChange={(payDate) =>
+                            updateTerm(t.termLabel, { payDate })
                           }
-                          className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                         />
                       </label>
                       {!t.isPaid ? (

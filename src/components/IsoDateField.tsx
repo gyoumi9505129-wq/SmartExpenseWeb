@@ -1,21 +1,25 @@
 "use client";
 
-import { normalizeIsoDateInput } from "@/lib/format";
+import { useRef } from "react";
+import {
+  dateStorageToDigits,
+  formatDateDigits,
+  normalizeIsoDateInput,
+} from "@/lib/format";
 
 type Props = {
   value: string;
   onChange: (isoDate: string) => void;
   disabled?: boolean;
   className?: string;
-  /** input 요소에 붙일 추가 클래스 */
   inputClassName?: string;
 };
 
 /**
- * 장부·이력 공통 일자 입력.
- * - 화면/저장: YYYY-MM-DD
- * - 키보드: YYYYMMDD 또는 YYYY-MM-DD
- * - 달력 아이콘으로도 선택 가능
+ * 앱 `ClubDateField` 와 동일:
+ * - 숫자만 최대 8자리 입력
+ * - 화면 표시는 YYYY-MM-DD (입력 중 자동 하이픈)
+ * - 오른쪽 달력 아이콘으로 날짜 선택
  */
 export function IsoDateField({
   value,
@@ -24,46 +28,55 @@ export function IsoDateField({
   className,
   inputClassName = "mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm",
 }: Props) {
-  const iso = normalizeIsoDateInput(value) || value;
+  const pickerRef = useRef<HTMLInputElement>(null);
+  const digits = dateStorageToDigits(value);
+  const display = formatDateDigits(digits);
+  const completeIso = normalizeIsoDateInput(display);
 
   return (
     <div className={`relative ${className || ""}`}>
       <input
         type="text"
         inputMode="numeric"
+        autoComplete="off"
         placeholder="YYYY-MM-DD"
         disabled={disabled}
-        value={iso}
+        value={display}
+        maxLength={10}
         onChange={(e) => {
-          const raw = e.target.value.trim();
-          // 입력 중에는 하이픈 포함 자유, 8자리 숫자가 되면 즉시 정규화
-          const digits = raw.replace(/\D/g, "");
-          if (digits.length === 8) {
-            onChange(normalizeIsoDateInput(digits) || raw);
-            return;
-          }
-          onChange(raw);
+          if (disabled) return;
+          const nextDigits = dateStorageToDigits(e.target.value).slice(0, 8);
+          onChange(formatDateDigits(nextDigits));
         }}
         onBlur={() => {
-          const next = normalizeIsoDateInput(iso);
-          if (next) onChange(next);
+          if (!digits) {
+            onChange("");
+            return;
+          }
+          // 8자리면 유효 날짜만 확정, 아니면 포맷만 유지(저장 시 검증)
+          if (digits.length === 8) {
+            onChange(completeIso || formatDateDigits(digits));
+          } else {
+            onChange(formatDateDigits(digits));
+          }
         }}
         className={`${inputClassName} pr-10`}
       />
-      <input
-        type="date"
+      <button
+        type="button"
         disabled={disabled}
-        value={normalizeIsoDateInput(iso) || ""}
-        onChange={(e) => {
-          if (e.target.value) onChange(e.target.value);
+        onClick={() => {
+          const el = pickerRef.current;
+          if (!el) return;
+          try {
+            el.showPicker?.();
+          } catch {
+            el.click();
+          }
         }}
-        className="absolute bottom-0 right-1 top-auto h-[38px] w-9 cursor-pointer opacity-0"
-        aria-label="달력에서 날짜 선택"
-        tabIndex={-1}
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute bottom-2 right-2 text-zinc-400"
+        className="absolute bottom-1.5 right-1.5 rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-40"
+        aria-label="날짜 선택"
+        title="날짜 선택"
       >
         <svg
           width="18"
@@ -76,7 +89,19 @@ export function IsoDateField({
           <rect x="3" y="4" width="18" height="18" rx="2" />
           <path d="M16 2v4M8 2v4M3 10h18" />
         </svg>
-      </span>
+      </button>
+      <input
+        ref={pickerRef}
+        type="date"
+        tabIndex={-1}
+        disabled={disabled}
+        value={completeIso || ""}
+        onChange={(e) => {
+          if (e.target.value) onChange(e.target.value);
+        }}
+        className="pointer-events-none absolute h-0 w-0 opacity-0"
+        aria-hidden
+      />
     </div>
   );
 }

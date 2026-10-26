@@ -6,7 +6,8 @@ import {
   hasPayableHistory,
 } from "@/components/meeting/DuesPaymentHistoryDialog";
 import { detailRemaining } from "@/lib/duesSync";
-import { formatWon, todayIsoDate } from "@/lib/format";
+import { IsoDateField } from "@/components/IsoDateField";
+import { formatWon, normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
 import {
   detailStatusLabel,
   recordUnpaidAmount,
@@ -75,7 +76,8 @@ export function MemberDuesDetailDialog({
       );
       return;
     }
-    const payDate = payDateByRow[row.id] || todayIsoDate();
+    const payDate =
+      normalizeIsoDateInput(payDateByRow[row.id] || "") || todayIsoDate();
     setBusy(true);
     setError(null);
     try {
@@ -319,16 +321,15 @@ export function MemberDuesDetailDialog({
                               </button>
                             ))}
                           </div>
-                          <input
-                            type="date"
+                          <IsoDateField
                             value={payDateByRow[row.id] || todayIsoDate()}
-                            onChange={(e) =>
+                            onChange={(date) =>
                               setPayDateByRow((p) => ({
                                 ...p,
-                                [row.id]: e.target.value,
+                                [row.id]: date,
                               }))
                             }
-                            className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs"
+                            inputClassName="w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs"
                           />
                           {mode === "PARTIAL" ? (
                             <input

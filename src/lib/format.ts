@@ -10,19 +10,28 @@ export function todayIsoDate() {
   return `${y}-${m}-${day}`;
 }
 
-/** YYYY-MM-DD 또는 YYYYMMDD → YYYY-MM-DD. 유효하지 않으면 "" */
+/** 앱 `dateStorageToDigits` — 숫자만 최대 8자리 */
+export function dateStorageToDigits(stored: string): string {
+  return stored.replace(/\D/g, "").slice(0, 8);
+}
+
+/** 앱 `formatDateDigits` — 입력 중 YYYY / YYYY-MM / YYYY-MM-DD */
+export function formatDateDigits(digits: string): string {
+  const d = dateStorageToDigits(digits);
+  if (d.length <= 4) return d;
+  if (d.length <= 6) return `${d.slice(0, 4)}-${d.slice(4)}`;
+  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
+}
+
+/** 완전·유효한 YYYY-MM-DD 만 반환. 아니면 "" */
 export function normalizeIsoDateInput(raw: string): string {
-  const digits = raw.trim().replace(/\D/g, "");
-  if (digits.length !== 8) {
-    const m = raw.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) return "";
-    return isValidYmd(+m[1]!, +m[2]!, +m[3]!) ? m[0]! : "";
-  }
+  const digits = dateStorageToDigits(raw);
+  if (digits.length !== 8) return "";
   const y = Number(digits.slice(0, 4));
   const mo = Number(digits.slice(4, 6));
   const d = Number(digits.slice(6, 8));
   if (!isValidYmd(y, mo, d)) return "";
-  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+  return formatDateDigits(digits);
 }
 
 function isValidYmd(y: number, m: number, d: number): boolean {
