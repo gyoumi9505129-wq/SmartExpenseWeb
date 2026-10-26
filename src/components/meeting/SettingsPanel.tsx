@@ -408,8 +408,8 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
             초기 데이터로 재설정
           </h3>
           <p className="text-xs text-zinc-500">
-            앱과 동일한 한우리 초기 시드 파일을 올리면 됩니다. 사이트에 포함된
-            시드를 쓰거나, 내려받은 파일을 업로드하세요.
+            고정 시드 파일을 받거나 업로드한 뒤, 또는 「초기 데이터로 재설정」으로
+            사이트 시드를 바로 적용할 수 있습니다.
           </p>
           <div className="flex flex-wrap gap-2">
             <a
@@ -419,26 +419,6 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
             >
               초기 데이터 파일 받기
             </a>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                if (
-                  !confirm(
-                    "현재 데이터를 지운 뒤 서버의 초기 데이터 파일로 재설정합니다. 계속할까요?"
-                  )
-                ) {
-                  return;
-                }
-                void run(async () => {
-                  const payload = await loadSeedBackupFromPublic();
-                  await restoreMeetingBackup(meetingId, payload, setProgress);
-                }, "초기 데이터로 재설정했습니다.");
-              }}
-              className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-            >
-              초기 데이터로 재설정
-            </button>
             <button
               type="button"
               disabled={busy}
@@ -469,6 +449,26 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
                 }, "초기 데이터 파일로 재설정했습니다.");
               }}
             />
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                if (
+                  !confirm(
+                    "현재 데이터를 지운 뒤 서버의 초기 데이터 파일로 재설정합니다. 계속할까요?"
+                  )
+                ) {
+                  return;
+                }
+                void run(async () => {
+                  const payload = await loadSeedBackupFromPublic();
+                  await restoreMeetingBackup(meetingId, payload, setProgress);
+                }, "초기 데이터로 재설정했습니다.");
+              }}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+            >
+              초기 데이터로 재설정
+            </button>
           </div>
         </div>
       </section>
