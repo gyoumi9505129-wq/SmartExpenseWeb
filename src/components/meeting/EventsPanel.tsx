@@ -6,7 +6,14 @@ import {
   eventExpensesFromLedger,
 } from "@/lib/eventExpenses";
 import { formatWon } from "@/lib/format";
-import { MEMBER_STATUS_LABEL, type EventExpense, type Member, type Transaction } from "@/lib/types";
+import {
+  MEMBER_STATUS_LABEL,
+  type EventExpense,
+  type Member,
+  type Transaction,
+} from "@/lib/types";
+
+type StatusFilter = "ALL" | "ACTIVE" | "DORMANT" | "WITHDRAWN";
 
 type Props = {
   clubName: string;
@@ -15,6 +22,24 @@ type Props = {
   members: Member[];
 };
 
+function statusRank(status: string): number {
+  if (status === "ACTIVE") return 0;
+  if (status === "DORMANT") return 1;
+  return 2;
+}
+
+function sortEventSummaries<
+  T extends { memberName: string; memberStatus: string },
+>(list: T[], filter: StatusFilter): T[] {
+  return [...list].sort((a, b) => {
+    if (filter === "ALL") {
+      const byStatus = statusRank(a.memberStatus) - statusRank(b.memberStatus);
+      if (byStatus !== 0) return byStatus;
+    }
+    return a.memberName.localeCompare(b.memberName, "ko");
+  });
+}
+
 export function EventsPanel({
   clubName,
   eventExpenses,
@@ -22,8 +47,9 @@ export function EventsPanel({
   members,
 }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<StatusFilter>("ACTIVE");
 
-  const { total, memberSummaries, fromLedgerFallback } = useMemo(() => {
+  const { total, allSummaries, fromLedgerFallback } = useMemo(() => {
     const source =
       eventExpenses.length > 0
         ? eventExpenses
@@ -31,12 +57,37 @@ export function EventsPanel({
     const built = buildEventSummaries(source, members);
     return {
       total: built.total,
-      memberSummaries: built.members,
+      allSummaries: built.members,
       fromLedgerFallback: eventExpenses.length === 0 && built.members.length > 0,
     };
   }, [eventExpenses, transactions, members]);
 
-  if (memberSummaries.length === 0) {
+  const counts = useMemo(() => {
+    let active = 0;
+    let dormant = 0;
+    let withdrawn = 0;
+    for (const m of allSummaries) {
+      if (m.memberStatus === "DORMANT") dormant += 1;
+      else if (m.memberStatus === "WITHDRAWN") withdrawn += 1;
+      else active += 1;
+    }
+    return {
+      ALL: allSummaries.length,
+      ACTIVE: active,
+      DORMANT: dormant,
+      WITHDRAWN: withdrawn,
+    };
+  }, [allSummaries]);
+
+  const memberSummaries = useMemo(() => {
+    const filtered =
+      filter === "ALL"
+        ? allSummaries
+        : allSummaries.filter((m) => m.memberStatus === filter);
+    return sortEventSummaries(filtered, filter);
+  }, [allSummaries, filter]);
+
+  if (allSummaries.length === 0) {
     return (
       <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center">
         <p className="text-base font-medium text-zinc-800">
@@ -68,79 +119,111 @@ export function EventsPanel({
         ) : null}
       </div>
 
-      <p className="text-sm font-medium text-zinc-500">회원별 지급 누적액</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-medium text-zinc-500">회원별 지급 누적액</p>
+      </div>
 
-      <ul className="space-y-3">
-        {memberSummaries.map((summary) => {
-          const isOpen = expandedId === summary.memberId;
-          const statusLabel =
-            MEMBER_STATUS_LABEL[summary.memberStatus] || summary.memberStatus;
-          const statusClass =
-            summary.memberStatus === "ACTIVE"
-              ? "bg-blue-50 text-blue-700"
-              : summary.memberStatus === "DORMANT"
-                ? "bg-zinc-100 text-zinc-600"
-                : "bg-red-50 text-red-700";
-          return (
-            <li key={summary.memberId}>
-              <button
-                type="button"
-                onClick={() =>
-                  setExpandedId(isOpen ? null : summary.memberId)
-                }
-                className="touch-card w-full rounded-2xl border border-zinc-200 bg-white p-4 text-left shadow-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-base font-semibold text-zinc-900">
-                        {summary.memberName}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass}`}
-                      >
-                        {statusLabel}
-                      </span>
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["ALL", "전체"],
+            ["ACTIVE", "활동중"],
+            ["DORMANT", "휴면"],
+            ["WITHDRAWN", "탈퇴"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setFilter(id)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+              filter === id
+                ? "bg-zinc-800 text-white"
+                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            }`}
+          >
+            {label} {counts[id]}
+          </button>
+        ))}
+      </div>
+
+      {memberSummaries.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-zinc-200 bg-white px-4 py-8 text-center text-sm text-zinc-500">
+          해당 상태의 경조 내역이 없습니다.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {memberSummaries.map((summary) => {
+            const isOpen = expandedId === summary.memberId;
+            const statusLabel =
+              MEMBER_STATUS_LABEL[summary.memberStatus] || summary.memberStatus;
+            const statusClass =
+              summary.memberStatus === "ACTIVE"
+                ? "bg-blue-50 text-blue-700"
+                : summary.memberStatus === "DORMANT"
+                  ? "bg-zinc-100 text-zinc-600"
+                  : "bg-red-50 text-red-700";
+            return (
+              <li key={summary.memberId}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedId(isOpen ? null : summary.memberId)
+                  }
+                  className="touch-card w-full rounded-2xl border border-zinc-200 bg-white p-4 text-left shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-base font-semibold text-zinc-900">
+                          {summary.memberName}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClass}`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm font-medium text-red-600">
+                        총 {formatWon(summary.totalAmount)}
+                      </p>
                     </div>
-                    <p className="mt-1 text-sm font-medium text-red-600">
-                      총 {formatWon(summary.totalAmount)}
-                    </p>
+                    <span className="text-zinc-400" aria-hidden>
+                      {isOpen ? "▴" : "▾"}
+                    </span>
                   </div>
-                  <span className="text-zinc-400" aria-hidden>
-                    {isOpen ? "▴" : "▾"}
-                  </span>
-                </div>
 
-                {isOpen ? (
-                  <ul className="mt-3 space-y-2 border-t border-zinc-100 pt-3">
-                    {summary.details.map((detail, idx) => (
-                      <li
-                        key={`${detail.date}-${detail.eventSubCategory}-${idx}`}
-                        className="flex items-start justify-between gap-3 text-sm"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-medium text-zinc-800">
-                            {detail.eventSubCategory}
-                          </p>
-                          <p className="text-xs text-zinc-500">{detail.date}</p>
-                          {detail.note ? (
-                            <p className="mt-0.5 text-xs text-zinc-500">
-                              {detail.note}
+                  {isOpen ? (
+                    <ul className="mt-3 space-y-2 border-t border-zinc-100 pt-3">
+                      {summary.details.map((detail, idx) => (
+                        <li
+                          key={`${detail.date}-${detail.eventSubCategory}-${idx}`}
+                          className="flex items-start justify-between gap-3 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium text-zinc-800">
+                              {detail.eventSubCategory}
                             </p>
-                          ) : null}
-                        </div>
-                        <p className="shrink-0 font-medium text-zinc-800">
-                          {formatWon(detail.amount)}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                            <p className="text-xs text-zinc-500">{detail.date}</p>
+                            {detail.note ? (
+                              <p className="mt-0.5 text-xs text-zinc-500">
+                                {detail.note}
+                              </p>
+                            ) : null}
+                          </div>
+                          <p className="shrink-0 font-medium text-zinc-800">
+                            {formatWon(detail.amount)}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
