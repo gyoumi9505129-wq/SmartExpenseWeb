@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { IsoDateField } from "@/components/IsoDateField";
 import type { ClubHistoryRow } from "@/lib/meetingBackup";
-import { todayIsoDate } from "@/lib/format";
+import { normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
 import {
   deleteHistory,
   historyDateToIso,
@@ -105,11 +106,10 @@ export function MeetingHistoryDialog({
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="text-xs text-zinc-500">
               일자
-              <input
-                type="date"
+              <IsoDateField
                 value={histDate}
-                onChange={(e) => setHistDate(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                onChange={setHistDate}
+                disabled={busy}
               />
             </label>
             <label className="text-xs text-zinc-500">
@@ -134,18 +134,23 @@ export function MeetingHistoryDialog({
           <button
             type="button"
             disabled={busy}
-            onClick={() =>
-              run(async () => {
+            onClick={() => {
+              const dateIso = normalizeIsoDateInput(histDate);
+              if (!dateIso) {
+                setError("일자는 YYYY-MM-DD 또는 YYYYMMDD 로 입력해 주세요.");
+                return;
+              }
+              void run(async () => {
                 await upsertHistory(meetingId, {
-                  dateIso: histDate,
+                  dateIso,
                   content: histContent,
                   details: histDetails,
                 });
                 setHistDate(todayIsoDate());
                 setHistContent("");
                 setHistDetails("");
-              }, "이력을 추가했습니다.")
-            }
+              }, "이력을 추가했습니다.");
+            }}
             className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
           >
             이력 추가

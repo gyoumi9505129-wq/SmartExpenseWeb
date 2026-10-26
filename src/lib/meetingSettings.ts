@@ -7,6 +7,7 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
+import { epochMsToIsoDate, isoDateToLocalEpochMs } from "./format";
 import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import type { ClubAccountRow, ClubHistoryRow } from "./meetingBackup";
@@ -91,8 +92,10 @@ export async function upsertHistory(
 ): Promise<string> {
   const content = input.content.trim();
   if (!content) throw new Error("이력 내용을 입력해 주세요.");
-  const dateMs = Date.parse(input.dateIso);
-  if (Number.isNaN(dateMs)) throw new Error("날짜 형식이 올바르지 않습니다.");
+  const dateMs = isoDateToLocalEpochMs(input.dateIso);
+  if (Number.isNaN(dateMs)) {
+    throw new Error("날짜는 YYYY-MM-DD 형식으로 입력해 주세요.");
+  }
   const payload = {
     date: dateMs,
     content,
@@ -224,8 +227,5 @@ export async function deleteAccount(
 }
 
 export function historyDateToIso(dateMs: number): string {
-  if (!dateMs) return "";
-  const d = new Date(dateMs);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10);
+  return epochMsToIsoDate(dateMs);
 }

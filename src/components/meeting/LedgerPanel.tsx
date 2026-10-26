@@ -14,7 +14,8 @@ import {
   unpaidOptionLabel,
 } from "@/lib/dues";
 import { REGULAR_DUES_CATEGORY, buildDuesPaymentNote } from "@/lib/duesSync";
-import { formatWon, todayIsoDate } from "@/lib/format";
+import { IsoDateField } from "@/components/IsoDateField";
+import { formatWon, normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
 import { createTransaction, updateTransaction } from "@/lib/ledger";
 import type { DuesRecord, Member, Transaction } from "@/lib/types";
 
@@ -201,8 +202,9 @@ export function LedgerPanel({
 
   async function save() {
     const amount = Number(form.amount.replace(/,/g, ""));
-    if (!form.date) {
-      setError("일자를 입력해 주세요.");
+    const dateIso = normalizeIsoDateInput(form.date);
+    if (!dateIso) {
+      setError("일자는 YYYY-MM-DD 또는 YYYYMMDD 로 입력해 주세요.");
       return;
     }
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -258,11 +260,11 @@ export function LedgerPanel({
           memberName: member?.name || "",
           detailId: form.duesDetailId,
           amount,
-          date: form.date,
+          date: dateIso,
         });
       } else {
         const input = {
-          date: form.date,
+          date: dateIso,
           type: form.type,
           category: form.category,
           description: form.description.trim(),
@@ -354,11 +356,9 @@ export function LedgerPanel({
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="text-xs text-zinc-500">
               일자
-              <input
-                type="date"
+              <IsoDateField
                 value={form.date}
-                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                onChange={(date) => setForm((f) => ({ ...f, date }))}
               />
             </label>
             <label className="text-xs text-zinc-500">
