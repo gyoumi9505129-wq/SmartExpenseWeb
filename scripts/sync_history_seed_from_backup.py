@@ -1,17 +1,22 @@
-"""백업 JSON의 histories → 웹 시드 + 앱 ClubHistoryInitialData.kt 갱신."""
+"""
+백업 JSON의 histories → 웹 시드 + 앱 ClubHistoryInitialData.kt 갱신.
+
+사용:
+  python scripts/sync_history_seed_from_backup.py <backup.smartexpense.json>
+"""
 from __future__ import annotations
 
 import json
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
-BACKUP = Path(
-    r"C:\Users\gyoum\Downloads\smartexpense-backup-한우리-2026-10-26.smartexpense.json"
-)
-SEED = Path(__file__).resolve().parents[1] / "public/seeds/hanuri-initial.smartexpense.json"
-KOTLIN = Path(
-    r"c:\AiDev\SmartExpense\app\src\main\kotlin\com\smartexpense\data\local\seed\ClubHistoryInitialData.kt"
+WEB_ROOT = Path(__file__).resolve().parents[1]
+SEED = WEB_ROOT / "public/seeds/hanuri-initial.smartexpense.json"
+KOTLIN = (
+    WEB_ROOT.parent
+    / "SmartExpense/app/src/main/kotlin/com/smartexpense/data/local/seed/ClubHistoryInitialData.kt"
 )
 
 
@@ -25,7 +30,17 @@ def kotlin_escape(s: str) -> str:
 
 
 def main() -> None:
-    backup = json.loads(BACKUP.read_text(encoding="utf-8"))
+    if len(sys.argv) < 2:
+        raise SystemExit(
+            "사용법: python scripts/sync_history_seed_from_backup.py <backup.json>"
+        )
+    backup_path = Path(sys.argv[1])
+    if not backup_path.is_file():
+        raise SystemExit(f"백업 파일이 없습니다: {backup_path}")
+    if not KOTLIN.is_file():
+        raise SystemExit(f"앱 시드 파일이 없습니다: {KOTLIN}")
+
+    backup = json.loads(backup_path.read_text(encoding="utf-8"))
     seed = json.loads(SEED.read_text(encoding="utf-8"))
     rows = sorted(backup.get("histories") or [], key=lambda x: x.get("date") or 0)
 
