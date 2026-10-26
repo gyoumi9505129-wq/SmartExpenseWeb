@@ -13083,73 +13083,73 @@
     },
     {
       "id": "seed_hist_009",
+      "date": 1390057200000,
+      "content": "회원 사망",
+      "details": "이세희(사망)",
+      "note": null
+    },
+    {
+      "id": "seed_hist_010",
       "date": 1421463600000,
       "content": "8대 회장 선출",
       "details": "회장 : 유병학",
       "note": null
     },
     {
-      "id": "seed_hist_010",
+      "id": "seed_hist_011",
       "date": 1475895600000,
       "content": "9대 회장 선출",
       "details": "회장 : 이충렬",
       "note": null
     },
     {
-      "id": "seed_hist_011",
+      "id": "seed_hist_012",
       "date": 1475895600000,
       "content": "회원추가 영입",
       "details": "전상환",
       "note": null
     },
     {
-      "id": "seed_hist_012",
+      "id": "seed_hist_013",
       "date": 1554519600000,
       "content": "10대 회장 선출",
       "details": "회장 : 김성겸",
       "note": null
     },
     {
-      "id": "seed_hist_013",
+      "id": "seed_hist_014",
       "date": 1641006000000,
       "content": "회원 탈퇴",
       "details": "이충렬(탈퇴)",
       "note": "2022년 부터 탈퇴함."
     },
     {
-      "id": "seed_hist_014",
+      "id": "seed_hist_015",
       "date": 1653102000000,
       "content": "11대 회장 선출",
       "details": "회장 : 김민석",
       "note": "2022년 상반기모임에 선출됨"
     },
     {
-      "id": "seed_hist_015",
+      "id": "seed_hist_016",
       "date": 1671246000000,
       "content": "회원추가 영입",
       "details": "최창국",
       "note": "2022년 하반기모임에 영입"
     },
     {
-      "id": "seed_hist_016",
+      "id": "seed_hist_017",
       "date": 1767236400000,
       "content": "회원 사망",
       "details": "유병학(사망)",
       "note": "2026-01-01 사망 함."
     },
     {
-      "id": "seed_hist_017",
-      "date": 1782529200000,
-      "content": "12대 회장 선출",
-      "details": "회장 : 김영섭",
-      "note": "2026년 상반기모임에서 선출"
-    },
-    {
       "id": "seed_hist_018",
-      "date": 1782529200000,
-      "content": "총무 선출",
-      "details": "총무 : 김성겸",
-      "note": "2026년 상반기모임에서 선출"
+      "date": 1782486000000,
+      "content": "12대 회장 및 총무 선출",
+      "details": "회장 : 김영섭, 총무 : 김성겸",
+      "note": null
     }
   ],
   "accounts": [

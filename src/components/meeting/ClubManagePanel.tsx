@@ -1,20 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ClubAccountRow, ClubHistoryRow } from "@/lib/meetingBackup";
-import {
-  historyDateToIso,
-  listAccounts,
-  listHistories,
-} from "@/lib/meetingSettings";
+import { MeetingHistoryDialog } from "@/components/meeting/MeetingHistoryDialog";
+import type { ClubAccountRow } from "@/lib/meetingBackup";
+import { listAccounts, listHistories } from "@/lib/meetingSettings";
 
 type Props = {
   meetingId: string;
 };
 
-/** 일반 회원용 — 모임 이력·계좌 조회 전용 */
+/** 일반 회원용 — 모임 이력(팝업)·계좌 조회 */
 export function ClubManagePanel({ meetingId }: Props) {
-  const [histories, setHistories] = useState<ClubHistoryRow[]>([]);
+  const [historyCount, setHistoryCount] = useState(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [accounts, setAccounts] = useState<ClubAccountRow[]>([]);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +25,7 @@ export function ClubManagePanel({ meetingId }: Props) {
         listHistories(meetingId),
         listAccounts(meetingId),
       ]);
-      setHistories(h);
+      setHistoryCount(h.length);
       setAccounts(a);
     } catch (e) {
       setError(
@@ -60,40 +58,18 @@ export function ClubManagePanel({ meetingId }: Props) {
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold">모임 이력</h2>
-        <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-100">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-100 bg-zinc-50 text-xs font-medium text-zinc-500">
-              <tr>
-                <th className="whitespace-nowrap px-3 py-2">일자</th>
-                <th className="px-3 py-2">내용</th>
-                <th className="px-3 py-2">상세</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {histories.map((h) => (
-                <tr key={h.id} className="align-top text-zinc-800">
-                  <td className="whitespace-nowrap px-3 py-2 font-medium">
-                    {historyDateToIso(h.date)}
-                  </td>
-                  <td className="px-3 py-2">{h.content}</td>
-                  <td className="px-3 py-2 text-zinc-600">
-                    {h.details || "—"}
-                  </td>
-                </tr>
-              ))}
-              {!busy && histories.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="px-3 py-4 text-xs text-zinc-400"
-                  >
-                    이력이 없습니다.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+        <p className="mt-2 text-xs text-zinc-500">
+          등록된 이력 {historyCount.toLocaleString("ko-KR")}건. 팝업에서
+          조회합니다.
+        </p>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => setHistoryOpen(true)}
+          className="mt-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+        >
+          이력 보기
+        </button>
       </section>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -116,6 +92,17 @@ export function ClubManagePanel({ meetingId }: Props) {
           ) : null}
         </ul>
       </section>
+
+      {historyOpen ? (
+        <MeetingHistoryDialog
+          meetingId={meetingId}
+          readOnly
+          onClose={() => {
+            setHistoryOpen(false);
+            void reload().catch(() => undefined);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
