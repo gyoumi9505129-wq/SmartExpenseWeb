@@ -122,11 +122,11 @@ export function MeetingHistoryDialog({
               />
             </label>
             <label className="text-xs text-zinc-500">
-              세부
+              상세
               <input
                 value={histDetails}
                 onChange={(e) => setHistDetails(e.target.value)}
-                placeholder="세부"
+                placeholder="상세"
                 className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
               />
             </label>
@@ -156,41 +156,56 @@ export function MeetingHistoryDialog({
             이력 추가
           </button>
 
-          <ul className="divide-y divide-zinc-100 rounded-xl border border-zinc-100">
-            {histories.map((h) => (
-              <li
-                key={h.id}
-                className="flex flex-wrap items-start justify-between gap-2 px-3 py-2 text-sm"
-              >
-                <div>
-                  <p className="font-medium text-zinc-800">
-                    {historyDateToIso(h.date)} · {h.content}
-                  </p>
-                  {h.details ? (
-                    <p className="text-xs text-zinc-500">{h.details}</p>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    run(
-                      () => deleteHistory(meetingId, h.id),
-                      "이력을 삭제했습니다."
-                    )
-                  }
-                  className="text-xs text-red-600 disabled:opacity-50"
-                >
-                  삭제
-                </button>
-              </li>
-            ))}
-            {histories.length === 0 ? (
-              <li className="px-3 py-4 text-xs text-zinc-400">
-                이력이 없습니다.
-              </li>
-            ) : null}
-          </ul>
+          <div className="overflow-x-auto rounded-xl border border-zinc-100">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-zinc-100 bg-zinc-50 text-xs font-medium text-zinc-500">
+                <tr>
+                  <th className="whitespace-nowrap px-3 py-2">일자</th>
+                  <th className="px-3 py-2">내용</th>
+                  <th className="px-3 py-2">상세</th>
+                  <th className="w-14 px-3 py-2 text-right"> </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {histories.map((h) => (
+                  <tr key={h.id} className="align-top text-zinc-800">
+                    <td className="whitespace-nowrap px-3 py-2 font-medium">
+                      {historyDateToIso(h.date)}
+                    </td>
+                    <td className="px-3 py-2">{h.content}</td>
+                    <td className="px-3 py-2 text-zinc-600">
+                      {h.details || "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          run(
+                            () => deleteHistory(meetingId, h.id),
+                            "이력을 삭제했습니다."
+                          )
+                        }
+                        className="text-xs text-red-600 disabled:opacity-50"
+                      >
+                        삭제
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {histories.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-3 py-4 text-xs text-zinc-400"
+                    >
+                      이력이 없습니다.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
