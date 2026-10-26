@@ -11,11 +11,12 @@ import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import type { ClubAccountRow, ClubHistoryRow } from "./meetingBackup";
 
+/** 앱 `DuesPaymentMethod` / `toDisplayLabel()` 과 동일 */
 export const DUES_PAYMENT_METHODS = [
-  { value: "HALF_YEARLY", label: "반기(상·하반기)" },
-  { value: "YEARLY", label: "연 1회" },
-  { value: "MONTHLY", label: "월납" },
-  { value: "DEFAULT", label: "기본(반기)" },
+  { value: "MONTHLY", label: "월별" },
+  { value: "QUARTERLY", label: "분기별" },
+  { value: "HALF_YEARLY", label: "반기별" },
+  { value: "YEARLY", label: "연도별" },
 ] as const;
 
 export async function updateMeetingTitle(params: {
