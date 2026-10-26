@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/contexts/AuthProvider";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace("/dashboard");
+      // 로그인 직후 최신 HTML/JS를 받도록 soft navigate 대신 hard load
+      window.location.replace("/dashboard/");
     }
-  }, [loading, user, router]);
+  }, [loading, user]);
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-zinc-950 px-4 py-16 text-white">

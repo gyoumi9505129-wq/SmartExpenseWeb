@@ -140,6 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(getFirebaseAuth());
     setUser(null);
     setProfile(null);
+    // 클라이언트 라우팅만 하면 배포 전 JS 번들이 메모리에 남아
+    // 이전 UI(설정 이력 리스트·관리 탭 누락 등)가 그대로 보일 수 있음 → 강제 새로고침
+    window.location.assign("/");
   }, []);
 
   const value = useMemo<AuthContextValue>(
