@@ -1,6 +1,6 @@
-# 모으다 웹 (SmartExpense Web)
+# SmartExpense Web
 
-Android **SmartExpense / 모으다** 앱과 **동일한 Firebase 프로젝트**(`smartexpense-55679`)를 사용하는 Next.js 웹 클라이언트입니다.
+Android **SmartExpense** 앱과 **동일한 Firebase 프로젝트**(`smartexpense-55679`)를 사용하는 Next.js 웹 클라이언트입니다.
 
 ## 기술 스택
 

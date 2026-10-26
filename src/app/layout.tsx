@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "모으다 — 스마트 모임 장부",
+  title: "SmartExpense — 스마트 모임 장부",
   description: "Android 앱과 동일한 Firebase로 모임 장부·회비를 관리합니다.",
 };
 

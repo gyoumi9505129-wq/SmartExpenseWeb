@@ -3,7 +3,7 @@ import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 /**
- * Android SmartExpense(모으다)와 동일한 Firebase 프로젝트.
+ * Android SmartExpense 앱과 동일한 Firebase 프로젝트.
  * 프로젝트 ID: smartexpense-55679
  */
 const firebaseEnvConfig = {

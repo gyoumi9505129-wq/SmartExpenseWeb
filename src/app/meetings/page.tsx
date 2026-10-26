@@ -250,7 +250,6 @@ function MeetingDetailInner() {
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div>
-            <p className="text-xs font-medium text-emerald-600">모으다 웹</p>
             <h1 className="text-lg font-semibold">
               {meeting?.name ?? (isSample ? SAMPLE_MEETING.name : "모임")}
             </h1>
