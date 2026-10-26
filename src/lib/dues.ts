@@ -99,51 +99,123 @@ function serializeDetails(details: DuesDetail[]) {
   }));
 }
 
+/** 앱 `DuesPaymentMethod` 과 동일 */
+export type DuesPaymentMethodCode =
+  | "MONTHLY"
+  | "QUARTERLY"
+  | "HALF_YEARLY"
+  | "YEARLY";
+
+export function normalizeDuesPaymentMethod(
+  raw?: string | null
+): DuesPaymentMethodCode {
+  const method = (raw || "").trim().toUpperCase();
+  if (method === "MONTHLY") return "MONTHLY";
+  if (method === "QUARTERLY") return "QUARTERLY";
+  if (method === "YEARLY") return "YEARLY";
+  if (method === "HALF_YEARLY" || method.includes("HALF") || method === "DEFAULT") {
+    return "HALF_YEARLY";
+  }
+  return "HALF_YEARLY";
+}
+
+export function duesPaymentMethodLabel(raw?: string | null): string {
+  switch (normalizeDuesPaymentMethod(raw)) {
+    case "MONTHLY":
+      return "월별";
+    case "QUARTERLY":
+      return "분기별";
+    case "YEARLY":
+      return "연도별";
+    default:
+      return "반기별";
+  }
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function isoDate(year: number, month: number, day = 1): string {
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+/** 앱 `DuesTermSchedule.termLabelsFor` + 기본 납부일 */
+export function termSlotsForMethod(
+  paymentMethod: string,
+  year: number,
+  termDates?: { firstHalf?: string; secondHalf?: string; yearly?: string }
+): { termLabel: string; payDate: string }[] {
+  const method = normalizeDuesPaymentMethod(paymentMethod);
+  switch (method) {
+    case "MONTHLY":
+      return Array.from({ length: 12 }, (_, i) => ({
+        termLabel: `${i + 1}월`,
+        payDate: isoDate(year, i + 1),
+      }));
+    case "QUARTERLY":
+      return [
+        { termLabel: "1분기", payDate: isoDate(year, 1) },
+        { termLabel: "2분기", payDate: isoDate(year, 4) },
+        { termLabel: "3분기", payDate: isoDate(year, 7) },
+        { termLabel: "4분기", payDate: isoDate(year, 10) },
+      ];
+    case "YEARLY":
+      return [
+        {
+          termLabel: "연간",
+          payDate: termDates?.yearly || isoDate(year, 1),
+        },
+      ];
+    default:
+      return [
+        {
+          termLabel: "상반기",
+          payDate: termDates?.firstHalf || isoDate(year, 1),
+        },
+        {
+          termLabel: "하반기",
+          payDate: termDates?.secondHalf || isoDate(year, 7),
+        },
+      ];
+  }
+}
+
+/** 앱 `applyAutoDistributionFrom` — 균등 분배 후 나머지는 앞 회차부터 +1 */
+export function distributeDuesAmounts(
+  totalTargetAmount: number,
+  termCount: number
+): number[] {
+  const total = Math.max(0, Math.floor(totalTargetAmount));
+  const n = Math.max(0, termCount);
+  if (n <= 0) return [];
+  const base = Math.floor(total / n);
+  let remainder = total % n;
+  return Array.from({ length: n }, () => {
+    const extra = remainder > 0 ? 1 : 0;
+    if (remainder > 0) remainder -= 1;
+    return base + extra;
+  });
+}
+
 function defaultDetails(
   paymentMethod: string,
   year: number,
   totalTargetAmount: number,
   termDates?: { firstHalf?: string; secondHalf?: string; yearly?: string }
 ): DuesDetail[] {
-  const method = paymentMethod.toUpperCase();
-  if (method === "HALF_YEARLY") {
-    const half = Math.floor(totalTargetAmount / 2);
-    const second = totalTargetAmount - half;
-    return [
-      {
-        id: crypto.randomUUID(),
-        termLabel: "상반기",
-        amount: half,
-        paidAmount: 0,
-        isPaid: false,
-        isExcluded: false,
-        payDate: termDates?.firstHalf || `${year}-01-01`,
-        payments: [],
-      },
-      {
-        id: crypto.randomUUID(),
-        termLabel: "하반기",
-        amount: second,
-        paidAmount: 0,
-        isPaid: false,
-        isExcluded: false,
-        payDate: termDates?.secondHalf || `${year}-07-01`,
-        payments: [],
-      },
-    ];
-  }
-  return [
-    {
-      id: crypto.randomUUID(),
-      termLabel: "연간",
-      amount: totalTargetAmount,
-      paidAmount: 0,
-      isPaid: false,
-      isExcluded: false,
-      payDate: termDates?.yearly || `${year}-01-01`,
-      payments: [],
-    },
-  ];
+  const slots = termSlotsForMethod(paymentMethod, year, termDates);
+  const amounts = distributeDuesAmounts(totalTargetAmount, slots.length);
+  return slots.map((slot, i) => ({
+    id: crypto.randomUUID(),
+    termLabel: slot.termLabel,
+    amount: amounts[i] ?? 0,
+    paidAmount: 0,
+    isPaid: false,
+    isExcluded: false,
+    payDate: slot.payDate,
+    payments: [],
+  }));
 }
 
 export async function fetchDues(

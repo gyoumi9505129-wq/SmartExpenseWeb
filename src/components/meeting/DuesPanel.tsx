@@ -10,6 +10,10 @@ import { MemberDuesDetailDialog } from "@/components/meeting/MemberDuesDetailDia
 import { YearSelect } from "@/components/YearSelect";
 import {
   createOrUpdateDues,
+  distributeDuesAmounts,
+  duesPaymentMethodLabel,
+  normalizeDuesPaymentMethod,
+  termSlotsForMethod,
   type DuesTermPaymentInput,
 } from "@/lib/dues";
 import { duesYearOptions } from "@/lib/duesSync";
@@ -44,45 +48,22 @@ function buildTermDrafts(
   firstHalfDate: string,
   secondHalfDate: string
 ): TermDraft[] {
-  const method = paymentMethod.toUpperCase();
-  if (method.includes("HALF")) {
-    const half = Math.floor(totalTarget / 2);
-    const second = totalTarget - half;
-    return [
-      {
-        termLabel: "상반기",
-        amount: half,
-        payDate: firstHalfDate || `${year}-01-01`,
-        isExcluded: false,
-        isPaid: false,
-        additionalPay: "",
-        paidAmount: 0,
-        paymentHistory: [],
-      },
-      {
-        termLabel: "하반기",
-        amount: second,
-        payDate: secondHalfDate || `${year}-07-01`,
-        isExcluded: false,
-        isPaid: false,
-        additionalPay: "",
-        paidAmount: 0,
-        paymentHistory: [],
-      },
-    ];
-  }
-  return [
-    {
-      termLabel: "연간",
-      amount: totalTarget,
-      payDate: firstHalfDate || `${year}-01-01`,
-      isExcluded: false,
-      isPaid: false,
-      additionalPay: "",
-      paidAmount: 0,
-      paymentHistory: [],
-    },
-  ];
+  const slots = termSlotsForMethod(paymentMethod, year, {
+    firstHalf: firstHalfDate,
+    secondHalf: secondHalfDate,
+    yearly: firstHalfDate,
+  });
+  const amounts = distributeDuesAmounts(totalTarget, slots.length);
+  return slots.map((slot, i) => ({
+    termLabel: slot.termLabel,
+    amount: amounts[i] ?? 0,
+    payDate: slot.payDate,
+    isExcluded: false,
+    isPaid: false,
+    additionalPay: "",
+    paidAmount: 0,
+    paymentHistory: [],
+  }));
 }
 
 function termDraftsFromExisting(row: DuesRecord): TermDraft[] {
@@ -197,9 +178,8 @@ export function DuesPanel({
   );
 
   const activeMembers = members.filter((m) => m.status === "ACTIVE");
-  const isHalfYearly = (defaultPaymentMethod || "HALF_YEARLY")
-    .toUpperCase()
-    .includes("HALF");
+  const paymentMethodCode = normalizeDuesPaymentMethod(defaultPaymentMethod);
+  const paymentMethodLabel = duesPaymentMethodLabel(defaultPaymentMethod);
 
   const createPaidSum = termDrafts.reduce((s, t) => {
     if (t.isExcluded) return s;
@@ -254,27 +234,16 @@ export function DuesPanel({
             secondDate
           );
         }
-        if (
-          rows.length === 2 &&
-          defaultPaymentMethod.toUpperCase().includes("HALF")
-        ) {
-          const half = Math.floor(amount / 2);
-          const secondAmt = amount - half;
-          return rows.map((r, i) => {
-            const termAmount = i === 0 ? half : secondAmt;
-            return {
-              ...r,
-              amount: termAmount,
-              isPaid:
-                !r.isExcluded && termAmount > 0 && r.paidAmount >= termAmount,
-            };
-          });
-        }
-        return rows.map((r) => ({
-          ...r,
-          amount,
-          isPaid: !r.isExcluded && amount > 0 && r.paidAmount >= amount,
-        }));
+        const amounts = distributeDuesAmounts(amount, rows.length);
+        return rows.map((r, i) => {
+          const termAmount = amounts[i] ?? 0;
+          return {
+            ...r,
+            amount: termAmount,
+            isPaid:
+              !r.isExcluded && termAmount > 0 && r.paidAmount >= termAmount,
+          };
+        });
       });
       return;
     }
@@ -541,9 +510,7 @@ export function DuesPanel({
             >
               {createRemain > 0 ? `미납: ${formatWon(createRemain)}` : "완납"}
             </p>
-            <p className="text-zinc-500">
-              납부 방법: {isHalfYearly ? "반기" : "연간"}
-            </p>
+            <p className="text-zinc-500">납부 방법: {paymentMethodLabel}</p>
           </div>
 
           <div className="mt-4 space-y-3">
