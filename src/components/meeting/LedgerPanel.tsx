@@ -69,12 +69,13 @@ export function LedgerPanel({
   const [form, setForm] = useState<FormState>(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** 0 = 전체 */
-  const [yearFilter, setYearFilter] = useState(0);
+  /** 0 = 전체, 기본은 현재 연도 */
+  const [yearFilter, setYearFilter] = useState(() => new Date().getFullYear());
   const [page, setPage] = useState(1);
 
   const yearOptions = useMemo(() => {
     const set = new Set<number>();
+    set.add(new Date().getFullYear());
     for (const row of rows) {
       const y = yearFromDate(row.date);
       if (y != null) set.add(y);
@@ -307,14 +308,7 @@ export function LedgerPanel({
     <div className="mt-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm text-zinc-600">
-            수입·지출 내역 ({filtered.length.toLocaleString("ko-KR")}건
-            {yearFilter > 0 ? ` · ${yearFilter}년` : ""}
-            {rows.length !== filtered.length
-              ? ` / 전체 ${rows.length.toLocaleString("ko-KR")}건`
-              : ""}
-            )
-          </p>
+          <p className="text-sm text-zinc-600">수입·지출 내역</p>
           <label className="flex items-center gap-1.5 text-sm text-zinc-600">
             연도
             <select

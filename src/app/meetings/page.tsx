@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
   type TouchEvent,
 } from "react";
 import { AdminAccountsPanel } from "@/components/meeting/AdminAccountsPanel";
@@ -380,11 +381,28 @@ function MeetingDetailInner() {
           <StatCard
             label="현재 잔액"
             value={formatWon(balance)}
+            valueClassName={
+              balance < 0 ? "text-red-600" : "text-blue-600"
+            }
             hint="장부 전체 수입 − 지출 (계좌 이체 제외)"
           />
           <StatCard
             label="회원"
-            value={`활동중 ${memberCounts.active} · 휴면 ${memberCounts.dormant} · 탈퇴 ${memberCounts.withdrawn}`}
+            value={
+              <>
+                <span className="text-emerald-700">
+                  활동중 {memberCounts.active}
+                </span>
+                {" · "}
+                <span className="text-amber-700">
+                  휴면 {memberCounts.dormant}
+                </span>
+                {" · "}
+                <span className="text-zinc-500">
+                  탈퇴 {memberCounts.withdrawn}
+                </span>
+              </>
+            }
           />
         </section>
 
@@ -517,15 +535,19 @@ function StatCard({
   label,
   value,
   hint,
+  valueClassName,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   hint?: string;
+  valueClassName?: string;
 }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
       <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-base font-semibold leading-snug tracking-tight sm:text-lg">
+      <p
+        className={`mt-1 text-base font-semibold leading-snug tracking-tight sm:text-lg ${valueClassName ?? ""}`}
+      >
         {value}
       </p>
       {hint ? <p className="mt-1 text-[11px] text-zinc-500">{hint}</p> : null}
