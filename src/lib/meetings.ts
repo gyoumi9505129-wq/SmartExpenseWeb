@@ -41,6 +41,8 @@ export function mapMeeting(id: string, data: DocumentData): Meeting {
     name: asString(data.name),
     description: asString(data.description),
     slogan: asString(data.slogan),
+    nameHtml: asString(data.nameHtml),
+    sloganHtml: asString(data.sloganHtml),
     nameColor: asString(data.nameColor) || "default",
     nameFontSize: asString(data.nameFontSize) || "md",
     sloganColor: asString(data.sloganColor) || "default",

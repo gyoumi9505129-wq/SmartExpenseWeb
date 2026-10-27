@@ -52,6 +52,8 @@ export type MeetingBackupPayload = {
     name: string;
     slogan: string;
     description: string;
+    nameHtml?: string;
+    sloganHtml?: string;
     nameColor?: string;
     nameFontSize?: string;
     sloganColor?: string;
@@ -143,6 +145,8 @@ export async function exportMeetingBackup(
       name: meeting.name,
       slogan: meeting.slogan,
       description: meeting.description,
+      nameHtml: meeting.nameHtml || "",
+      sloganHtml: meeting.sloganHtml || "",
       nameColor: meeting.nameColor || "default",
       nameFontSize: meeting.nameFontSize || "md",
       sloganColor: meeting.sloganColor || "default",
@@ -319,6 +323,8 @@ export async function restoreMeetingBackup(
       name: meta.name || undefined,
       slogan: meta.slogan ?? "",
       description: meta.description ?? "",
+      nameHtml: meta.nameHtml || "",
+      sloganHtml: meta.sloganHtml || "",
       nameColor: meta.nameColor || "default",
       nameFontSize: meta.nameFontSize || "md",
       sloganColor: meta.sloganColor || "default",

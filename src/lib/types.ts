@@ -11,7 +11,10 @@ export type Meeting = {
   name: string;
   description: string;
   slogan: string;
-  /** 타이틀 색 프리셋: default | emerald | blue | amber | red | zinc */
+  /** 인라인 서식 HTML (웹 헤더). name/slogan 은 평문 유지 */
+  nameHtml: string;
+  sloganHtml: string;
+  /** @deprecated 전체 필드 프리셋 — 인라인 HTML 우선 */
   nameColor: string;
   nameFontSize: string;
   sloganColor: string;

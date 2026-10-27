@@ -59,6 +59,7 @@ import {
   type Member,
   type Transaction,
 } from "@/lib/types";
+import { titleDisplayHtml } from "@/lib/titleHtml";
 import {
   nameTitleClass,
   normalizeTitleColor,
@@ -323,22 +324,41 @@ function MeetingDetailInner() {
           <div>
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <h1
-                className={nameTitleClass(
-                  normalizeTitleColor(meeting?.nameColor),
-                  normalizeTitleSize(meeting?.nameFontSize)
-                )}
-              >
-                {meeting?.name ?? (isSample ? SAMPLE_MEETING.name : "모임")}
-              </h1>
-              {(meeting?.slogan || (isSample ? SAMPLE_MEETING.slogan : "")) ? (
+                className={
+                  meeting?.nameHtml
+                    ? "font-semibold"
+                    : nameTitleClass(
+                        normalizeTitleColor(meeting?.nameColor),
+                        normalizeTitleSize(meeting?.nameFontSize)
+                      )
+                }
+                dangerouslySetInnerHTML={{
+                  __html: titleDisplayHtml(
+                    meeting?.nameHtml,
+                    meeting?.name ??
+                      (isSample ? SAMPLE_MEETING.name : "모임")
+                  ),
+                }}
+              />
+              {(meeting?.slogan ||
+                meeting?.sloganHtml ||
+                (isSample ? SAMPLE_MEETING.slogan : "")) ? (
                 <p
-                  className={sloganTitleClass(
-                    normalizeTitleColor(meeting?.sloganColor),
-                    normalizeTitleSize(meeting?.sloganFontSize)
-                  )}
-                >
-                  {meeting?.slogan || SAMPLE_MEETING.slogan}
-                </p>
+                  className={
+                    meeting?.sloganHtml
+                      ? "text-sm"
+                      : sloganTitleClass(
+                          normalizeTitleColor(meeting?.sloganColor),
+                          normalizeTitleSize(meeting?.sloganFontSize)
+                        )
+                  }
+                  dangerouslySetInnerHTML={{
+                    __html: titleDisplayHtml(
+                      meeting?.sloganHtml,
+                      meeting?.slogan || SAMPLE_MEETING.slogan
+                    ),
+                  }}
+                />
               ) : null}
             </div>
             <p className="text-xs text-zinc-500">
