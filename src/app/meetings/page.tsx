@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type TouchEvent,
+} from "react";
 import { AdminAccountsPanel } from "@/components/meeting/AdminAccountsPanel";
 import { ClubManagePanel } from "@/components/meeting/ClubManagePanel";
 import { DuesPanel } from "@/components/meeting/DuesPanel";
@@ -174,6 +182,60 @@ function MeetingDetailInner() {
 
   const canManageAccounts = !isSample && !!meeting && isSystemAdmin;
 
+  const tabItems = useMemo(() => {
+    const base: { id: Tab; label: string }[] = [
+      { id: "ledger", label: "장부" },
+      { id: "dues", label: "회비" },
+      { id: "members", label: "회원" },
+      { id: "events", label: "경조" },
+      { id: "report", label: "결산" },
+    ];
+    if (canManageAccounts) {
+      base.push({ id: "admin", label: "관리" }, { id: "settings", label: "설정" });
+    } else if (!isSample) {
+      base.push({ id: "clubInfo", label: "관리" });
+    }
+    return base;
+  }, [canManageAccounts, isSample]);
+
+  const selectTab = useCallback(
+    (next: Tab) => {
+      setTab(next);
+      void reload();
+    },
+    [reload]
+  );
+
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+
+  const onSwipeTouchStart = useCallback((e: TouchEvent) => {
+    const t = e.changedTouches[0];
+    if (!t) return;
+    swipeStart.current = { x: t.clientX, y: t.clientY };
+  }, []);
+
+  const onSwipeTouchEnd = useCallback(
+    (e: TouchEvent) => {
+      const start = swipeStart.current;
+      swipeStart.current = null;
+      if (!start) return;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      // 가로 스와이프만 (세로 스크롤과 구분)
+      if (Math.abs(dx) < 72 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      const idx = tabItems.findIndex((item) => item.id === tab);
+      if (idx < 0) return;
+      if (dx < 0 && idx < tabItems.length - 1) {
+        selectTab(tabItems[idx + 1]!.id);
+      } else if (dx > 0 && idx > 0) {
+        selectTab(tabItems[idx - 1]!.id);
+      }
+    },
+    [tab, tabItems, selectTab]
+  );
+
   // 관리/설정 권한 없으면 해당 탭에서 이탈
   useEffect(() => {
     if (!canManageAccounts && (tab === "admin" || tab === "settings")) {
@@ -327,30 +389,11 @@ function MeetingDetailInner() {
         </section>
 
         <nav className="mt-6 flex gap-1 overflow-x-auto border-b border-zinc-200 sm:gap-2">
-          {(
-            [
-              ["ledger", "장부"],
-              ["dues", "회비"],
-              ["members", "회원"],
-              ["events", "경조"],
-              ["report", "결산"],
-              ...(canManageAccounts
-                ? ([
-                    ["admin", "관리"],
-                    ["settings", "설정"],
-                  ] as const)
-                : !isSample
-                  ? ([["clubInfo", "관리"]] as const)
-                  : []),
-            ] as const
-          ).map(([id, label]) => (
+          {tabItems.map(({ id, label }) => (
             <button
               key={id}
               type="button"
-              onClick={() => {
-                setTab(id);
-                void reload();
-              }}
+              onClick={() => selectTab(id)}
               className={`shrink-0 px-3 py-2 text-sm font-medium sm:px-4 ${
                 tab === id
                   ? "border-b-2 border-emerald-600 text-emerald-700"
@@ -365,7 +408,11 @@ function MeetingDetailInner() {
         {busy && !meeting ? (
           <p className="mt-8 text-sm text-zinc-500">데이터 로딩 중…</p>
         ) : (
-          <>
+          <div
+            className="touch-pan-y"
+            onTouchStart={onSwipeTouchStart}
+            onTouchEnd={onSwipeTouchEnd}
+          >
             {busy ? (
               <p className="mt-3 text-xs text-zinc-400">최신 데이터 불러오는 중…</p>
             ) : null}
@@ -445,7 +492,7 @@ function MeetingDetailInner() {
                 onChanged={reload}
               />
             ) : null}
-          </>
+          </div>
         )}
       </main>
     </div>
