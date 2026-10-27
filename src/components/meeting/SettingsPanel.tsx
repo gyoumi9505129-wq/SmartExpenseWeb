@@ -22,6 +22,16 @@ import {
 } from "@/lib/meetingSettings";
 import type { ClubAccountRow } from "@/lib/meetingBackup";
 import type { Meeting } from "@/lib/types";
+import {
+  TITLE_COLORS,
+  TITLE_SIZES,
+  nameTitleClass,
+  normalizeTitleColor,
+  normalizeTitleSize,
+  sloganTitleClass,
+  type TitleColor,
+  type TitleSize,
+} from "@/lib/titleStyle";
 
 type Props = {
   meetingId: string;
@@ -29,9 +39,76 @@ type Props = {
   onChanged: () => Promise<void>;
 };
 
+function StyleControls({
+  label,
+  color,
+  size,
+  onColor,
+  onSize,
+}: {
+  label: string;
+  color: TitleColor;
+  size: TitleSize;
+  onColor: (v: TitleColor) => void;
+  onSize: (v: TitleSize) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-600">
+      <span className="font-medium text-zinc-500">{label}</span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-zinc-400">색</span>
+        {TITLE_COLORS.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            title={c.label}
+            aria-label={c.label}
+            onClick={() => onColor(c.value)}
+            className={`h-6 w-6 rounded-full border-2 ${
+              color === c.value
+                ? "border-emerald-600 ring-1 ring-emerald-200"
+                : "border-white ring-1 ring-zinc-200"
+            }`}
+            style={{ backgroundColor: c.swatch }}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-1">
+        <span className="text-zinc-400">크기</span>
+        {TITLE_SIZES.map((s) => (
+          <button
+            key={s.value}
+            type="button"
+            onClick={() => onSize(s.value)}
+            className={`rounded-md px-2 py-1 ${
+              size === s.value
+                ? "bg-emerald-600 text-white"
+                : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
   const [name, setName] = useState(meeting.name);
   const [slogan, setSlogan] = useState(meeting.slogan);
+  const [nameColor, setNameColor] = useState(() =>
+    normalizeTitleColor(meeting.nameColor)
+  );
+  const [nameFontSize, setNameFontSize] = useState(() =>
+    normalizeTitleSize(meeting.nameFontSize)
+  );
+  const [sloganColor, setSloganColor] = useState(() =>
+    normalizeTitleColor(meeting.sloganColor)
+  );
+  const [sloganFontSize, setSloganFontSize] = useState(() =>
+    normalizeTitleSize(meeting.sloganFontSize)
+  );
   const [duesMethod, setDuesMethod] = useState(
     meeting.duesPaymentMethod || "HALF_YEARLY"
   );
@@ -60,6 +137,10 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
   useEffect(() => {
     setName(meeting.name);
     setSlogan(meeting.slogan);
+    setNameColor(normalizeTitleColor(meeting.nameColor));
+    setNameFontSize(normalizeTitleSize(meeting.nameFontSize));
+    setSloganColor(normalizeTitleColor(meeting.sloganColor));
+    setSloganFontSize(normalizeTitleSize(meeting.sloganFontSize));
     setDuesMethod(meeting.duesPaymentMethod || "HALF_YEARLY");
   }, [meeting]);
 
@@ -116,24 +197,64 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
 
         <div className="mt-4 space-y-3">
           <h3 className="text-sm font-medium text-zinc-700">타이틀 설정</h3>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="모임 이름"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-          />
-          <input
-            value={slogan}
-            onChange={(e) => setSlogan(e.target.value)}
-            placeholder="슬로건"
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-          />
+          <div className="space-y-2">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="모임 이름"
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            />
+            <StyleControls
+              label="이름"
+              color={nameColor}
+              size={nameFontSize}
+              onColor={setNameColor}
+              onSize={setNameFontSize}
+            />
+          </div>
+          <div className="space-y-2">
+            <input
+              value={slogan}
+              onChange={(e) => setSlogan(e.target.value)}
+              placeholder="슬로건"
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            />
+            <StyleControls
+              label="슬로건"
+              color={sloganColor}
+              size={sloganFontSize}
+              onColor={setSloganColor}
+              onSize={setSloganFontSize}
+            />
+          </div>
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-3">
+            <p className="text-[11px] text-zinc-500">미리보기</p>
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className={nameTitleClass(nameColor, nameFontSize)}>
+                {name.trim() || "모임 이름"}
+              </span>
+              {slogan.trim() ? (
+                <span className={sloganTitleClass(sloganColor, sloganFontSize)}>
+                  {slogan}
+                </span>
+              ) : null}
+            </div>
+          </div>
           <button
             type="button"
             disabled={busy}
             onClick={() =>
               run(
-                () => updateMeetingTitle({ meetingId, name, slogan }),
+                () =>
+                  updateMeetingTitle({
+                    meetingId,
+                    name,
+                    slogan,
+                    nameColor,
+                    nameFontSize,
+                    sloganColor,
+                    sloganFontSize,
+                  }),
                 "모임 타이틀을 저장했습니다."
               )
             }

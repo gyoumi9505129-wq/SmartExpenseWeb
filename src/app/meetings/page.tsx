@@ -59,6 +59,12 @@ import {
   type Member,
   type Transaction,
 } from "@/lib/types";
+import {
+  nameTitleClass,
+  normalizeTitleColor,
+  normalizeTitleSize,
+  sloganTitleClass,
+} from "@/lib/titleStyle";
 
 type Tab =
   | "ledger"
@@ -316,11 +322,21 @@ function MeetingDetailInner() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div>
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <h1 className="text-lg font-semibold">
+              <h1
+                className={nameTitleClass(
+                  normalizeTitleColor(meeting?.nameColor),
+                  normalizeTitleSize(meeting?.nameFontSize)
+                )}
+              >
                 {meeting?.name ?? (isSample ? SAMPLE_MEETING.name : "모임")}
               </h1>
               {(meeting?.slogan || (isSample ? SAMPLE_MEETING.slogan : "")) ? (
-                <p className="text-sm text-zinc-600">
+                <p
+                  className={sloganTitleClass(
+                    normalizeTitleColor(meeting?.sloganColor),
+                    normalizeTitleSize(meeting?.sloganFontSize)
+                  )}
+                >
                   {meeting?.slogan || SAMPLE_MEETING.slogan}
                 </p>
               ) : null}

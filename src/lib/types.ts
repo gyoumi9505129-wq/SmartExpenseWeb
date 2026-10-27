@@ -11,6 +11,11 @@ export type Meeting = {
   name: string;
   description: string;
   slogan: string;
+  /** 타이틀 색 프리셋: default | emerald | blue | amber | red | zinc */
+  nameColor: string;
+  nameFontSize: string;
+  sloganColor: string;
+  sloganFontSize: string;
   ownerUid: string;
   adminUid: string;
   sharedWith: string[];

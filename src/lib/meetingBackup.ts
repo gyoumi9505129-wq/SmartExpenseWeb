@@ -52,6 +52,10 @@ export type MeetingBackupPayload = {
     name: string;
     slogan: string;
     description: string;
+    nameColor?: string;
+    nameFontSize?: string;
+    sloganColor?: string;
+    sloganFontSize?: string;
     duesPaymentMethod: string;
     initialBalance: number | null;
     currentBalance: number | null;
@@ -139,6 +143,10 @@ export async function exportMeetingBackup(
       name: meeting.name,
       slogan: meeting.slogan,
       description: meeting.description,
+      nameColor: meeting.nameColor || "default",
+      nameFontSize: meeting.nameFontSize || "md",
+      sloganColor: meeting.sloganColor || "default",
+      sloganFontSize: meeting.sloganFontSize || "md",
       duesPaymentMethod: meeting.duesPaymentMethod || "HALF_YEARLY",
       initialBalance: meeting.initialBalance,
       currentBalance: meeting.currentBalance,
@@ -311,6 +319,10 @@ export async function restoreMeetingBackup(
       name: meta.name || undefined,
       slogan: meta.slogan ?? "",
       description: meta.description ?? "",
+      nameColor: meta.nameColor || "default",
+      nameFontSize: meta.nameFontSize || "md",
+      sloganColor: meta.sloganColor || "default",
+      sloganFontSize: meta.sloganFontSize || "md",
       duesPaymentMethod: meta.duesPaymentMethod || "HALF_YEARLY",
       initialBalance: meta.initialBalance ?? 0,
       currentBalance: meta.currentBalance ?? 0,

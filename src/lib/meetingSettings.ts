@@ -11,6 +11,10 @@ import { epochMsToIsoDate, isoDateToLocalEpochMs } from "./format";
 import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import type { ClubAccountRow, ClubHistoryRow } from "./meetingBackup";
+import {
+  normalizeTitleColor,
+  normalizeTitleSize,
+} from "./titleStyle";
 
 /** 앱 `DuesPaymentMethod` / `toDisplayLabel()` 과 동일 */
 export const DUES_PAYMENT_METHODS = [
@@ -25,14 +29,26 @@ export async function updateMeetingTitle(params: {
   name: string;
   slogan: string;
   description?: string;
+  nameColor?: string;
+  nameFontSize?: string;
+  sloganColor?: string;
+  sloganFontSize?: string;
 }): Promise<void> {
   const name = params.name.trim();
   if (!name) throw new Error("모임 이름을 입력해 주세요.");
   const db = getFirebaseDb();
+  const nameColor = normalizeTitleColor(params.nameColor);
+  const nameFontSize = normalizeTitleSize(params.nameFontSize);
+  const sloganColor = normalizeTitleColor(params.sloganColor);
+  const sloganFontSize = normalizeTitleSize(params.sloganFontSize);
   await updateDoc(doc(db, COLLECTIONS.MEETINGS, params.meetingId), {
     name,
     slogan: params.slogan.trim(),
     description: (params.description ?? "").trim(),
+    nameColor,
+    nameFontSize,
+    sloganColor,
+    sloganFontSize,
   });
   await setDoc(
     doc(db, COLLECTIONS.MEETING_DIRECTORY, params.meetingId),
