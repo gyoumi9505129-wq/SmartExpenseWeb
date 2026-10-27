@@ -134,43 +134,116 @@ def parse_events(text: str, name_to_id: dict[str, str]) -> list[dict]:
     return rows
 
 
+def _extract_balanced(text: str, open_idx: int) -> tuple[str, int]:
+    """open_idx points at '(' ; return inner content and index after closing ')'."""
+    depth = 0
+    for i in range(open_idx, len(text)):
+        ch = text[i]
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                return text[open_idx + 1 : i], i + 1
+    raise ValueError(" unbalanced parentheses in DuesInitialData")
+
+
+def _parse_dues_payments(record_src: str) -> list[dict]:
+    payments: list[dict] = []
+    for pm in re.finditer(
+        r'DuesPaymentSeed\(\s*"([^"]+)"\s*,\s*(\d+)\s*\)',
+        record_src,
+    ):
+        payments.append(
+            {
+                "payDate": pm.group(1),
+                "amount": int(pm.group(2)),
+                "linkedTransactionId": None,
+            }
+        )
+    return payments
+
+
+def _parse_dues_seed_record(record_src: str, name: str) -> dict | None:
+    head = re.match(
+        r'\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*"([^"]*)"\s*,\s*(true|false)'
+        r"(?:\s*,\s*(\d+))?",
+        record_src,
+        re.S,
+    )
+    if not head:
+        return None
+    year, term, amount, pay, is_paid, paid_amt = head.groups()
+    payments: list[dict] = []
+    pay_list_m = re.search(r"payments\s*=\s*listOf\(", record_src)
+    if pay_list_m:
+        inner, _ = _extract_balanced(record_src, pay_list_m.end() - 1)
+        payments = _parse_dues_payments(inner)
+
+    y = int(year)
+    amount_i = int(amount)
+    if payments:
+        paid = sum(p["amount"] for p in payments)
+        pay_date = max((p["payDate"] for p in payments if p["payDate"]), default=pay)
+    elif paid_amt:
+        paid = int(paid_amt)
+        pay_date = pay
+        payments = (
+            [{"payDate": pay, "amount": paid, "linkedTransactionId": None}]
+            if paid > 0 and pay
+            else []
+        )
+    else:
+        paid = amount_i if is_paid == "true" else 0
+        pay_date = pay
+        payments = (
+            [{"payDate": pay, "amount": paid, "linkedTransactionId": None}]
+            if paid > 0 and pay
+            else []
+        )
+
+    is_paid_bool = is_paid == "true" or (amount_i > 0 and paid >= amount_i)
+    return {
+        "id": f"seed_dd_{slug(name)}_{y}_{term}",
+        "termLabel": term,
+        "amount": amount_i,
+        "paidAmount": paid,
+        "isPaid": is_paid_bool,
+        "isExcluded": False,
+        "payDate": pay_date,
+        "payments": payments,
+        "_year": y,
+    }
+
+
 def parse_dues(text: str, name_to_id: dict[str, str]) -> list[dict]:
     """Group DuesSeedRecord under MemberDuesSeed by member name keys in mapOf."""
-    # Split by "Name" to MemberDuesSeed
     dues_docs: list[dict] = []
-    for block in re.finditer(
-        r'"([^"]+)"\s+to\s+MemberDuesSeed\(\s*paymentMethod\s*=\s*DuesPaymentMethod\.(\w+)\s*,\s*records\s*=\s*listOf\((.*?)\)\s*\)',
+    for m in re.finditer(
+        r'"([^"]+)"\s+to\s+MemberDuesSeed\(\s*paymentMethod\s*=\s*DuesPaymentMethod\.(\w+)\s*,\s*records\s*=\s*listOf\(',
         text,
-        re.S,
     ):
-        name, method, body = block.groups()
+        name, method = m.groups()
         mid = name_to_id.get(name)
+        body, _ = _extract_balanced(text, m.end() - 1)
         if not mid:
             continue
+
         by_year: dict[int, list[dict]] = {}
-        for rm in re.finditer(
-            r'DuesSeedRecord\(\s*(\d+)\s*,\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*"([^"]*)"\s*,\s*(true|false)(?:\s*,\s*(\d+))?',
-            body,
-        ):
-            year, term, amount, pay, is_paid, paid_amt = rm.groups()
-            y = int(year)
-            amount_i = int(amount)
-            paid = int(paid_amt) if paid_amt else (amount_i if is_paid == "true" else 0)
-            det = {
-                "id": f"seed_dd_{slug(name)}_{y}_{term}",
-                "termLabel": term,
-                "amount": amount_i,
-                "paidAmount": paid,
-                "isPaid": is_paid == "true",
-                "isExcluded": False,
-                "payDate": pay,
-                "payments": (
-                    [{"payDate": pay, "amount": paid, "linkedTransactionId": None}]
-                    if paid > 0 and pay
-                    else []
-                ),
-            }
+        idx = 0
+        while True:
+            start = body.find("DuesSeedRecord(", idx)
+            if start < 0:
+                break
+            open_paren = start + len("DuesSeedRecord")
+            record_src, end = _extract_balanced(body, open_paren)
+            idx = end
+            det = _parse_dues_seed_record(record_src, name)
+            if not det:
+                continue
+            y = int(det.pop("_year"))
             by_year.setdefault(y, []).append(det)
+
         for y, details in sorted(by_year.items()):
             total = sum(d["amount"] for d in details)
             dues_docs.append(

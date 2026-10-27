@@ -9968,7 +9968,7 @@
       "memberId": "seed_김영섭",
       "memberName": "김영섭",
       "year": 2013,
-      "totalTargetAmount": 150000,
+      "totalTargetAmount": 300000,
       "paymentMethod": "HALF_YEARLY",
       "details": [
         {
@@ -9977,6 +9977,780 @@
           "amount": 150000,
           "paidAmount": 150000,
           "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2015-09-18",
+          "payments": [
+            {
+              "payDate": "2015-02-03",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-03-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-04-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-06-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-07-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-09-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2013_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2015-11-03",
+          "payments": [
+            {
+              "payDate": "2015-10-19",
+              "amount": 75000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-11-03",
+              "amount": 75000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2014",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2014,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2014_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2015-11-03",
+          "payments": [
+            {
+              "payDate": "2015-11-03",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2014_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2015-11-03",
+          "payments": [
+            {
+              "payDate": "2015-11-03",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2015",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2015,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2015_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2015-11-03",
+          "payments": [
+            {
+              "payDate": "2015-11-03",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2015_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2015-11-03",
+          "payments": [
+            {
+              "payDate": "2015-11-03",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2016",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2016,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2016_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2016-04-18",
+          "payments": [
+            {
+              "payDate": "2015-11-03",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-11-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2015-12-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-02-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-03-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-04-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2016_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2016-11-17",
+          "payments": [
+            {
+              "payDate": "2016-05-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-06-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-07-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-08-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-09-19",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2016-11-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2017",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2017,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2017_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2017-06-19",
+          "payments": [
+            {
+              "payDate": "2016-12-19",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-01-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-02-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-03-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-05-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-06-19",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2017_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2017-12-18",
+          "payments": [
+            {
+              "payDate": "2017-07-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-08-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-09-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-10-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-11-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-12-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2018",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2018,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2018_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2018-06-18",
+          "payments": [
+            {
+              "payDate": "2018-01-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-02-19",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-03-19",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-04-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-05-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-06-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2018_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2018-12-17",
+          "payments": [
+            {
+              "payDate": "2018-07-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-08-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-09-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-10-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-11-19",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-12-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2019",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2019,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2019_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2019-07-17",
+          "payments": [
+            {
+              "payDate": "2019-01-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-02-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-03-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-04-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-05-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-07-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2019_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2020-01-17",
+          "payments": [
+            {
+              "payDate": "2019-08-19",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-09-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-10-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-11-18",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-12-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-01-17",
+              "amount": 25000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2020",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2020,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2020_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2022-07-14",
+          "payments": [
+            {
+              "payDate": "2022-07-14",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2020_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2022-07-14",
+          "payments": [
+            {
+              "payDate": "2022-07-14",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2022",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2022,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2022_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2023-06-08",
+          "payments": [
+            {
+              "payDate": "2023-06-08",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2022_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2023-06-08",
+          "payments": [
+            {
+              "payDate": "2023-06-08",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2023",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2023,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2023_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2024-09-07",
+          "payments": [
+            {
+              "payDate": "2024-09-07",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2023_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2024-09-07",
+          "payments": [
+            {
+              "payDate": "2024-09-07",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2024",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2024,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2024_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2025-12-02",
+          "payments": [
+            {
+              "payDate": "2025-12-02",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2024_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2025-12-02",
+          "payments": [
+            {
+              "payDate": "2025-12-02",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2025",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2025,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2025_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2025-12-02",
+          "payments": [
+            {
+              "payDate": "2025-12-02",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2025_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2026-06-27",
+          "payments": [
+            {
+              "payDate": "2026-06-27",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_김영섭_2026",
+      "memberId": "seed_김영섭",
+      "memberName": "김영섭",
+      "year": 2026,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_김영섭_2026_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2026-06-27",
+          "payments": [
+            {
+              "payDate": "2026-06-27",
+              "amount": 150000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_김영섭_2026_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
           "isExcluded": false,
           "payDate": "",
           "payments": []
@@ -10638,7 +11412,7 @@
       "memberId": "seed_유락준",
       "memberName": "유락준",
       "year": 2013,
-      "totalTargetAmount": 150000,
+      "totalTargetAmount": 300000,
       "paymentMethod": "HALF_YEARLY",
       "details": [
         {
@@ -10648,11 +11422,688 @@
           "paidAmount": 150000,
           "isPaid": true,
           "isExcluded": false,
+          "payDate": "2017-01-23",
+          "payments": [
+            {
+              "payDate": "2013-09-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2013-10-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-01-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2013_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2017-04-21",
+          "payments": [
+            {
+              "payDate": "2017-02-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-03-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-04-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2014",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2014,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2014_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2017-07-21",
+          "payments": [
+            {
+              "payDate": "2017-05-22",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-06-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-07-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2014_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2017-10-23",
+          "payments": [
+            {
+              "payDate": "2017-08-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-09-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-10-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2015",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2015,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2015_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2018-01-22",
+          "payments": [
+            {
+              "payDate": "2017-11-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2017-12-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-01-22",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2015_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2018-04-23",
+          "payments": [
+            {
+              "payDate": "2018-02-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-03-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-04-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2016",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2016,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2016_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2018-07-23",
+          "payments": [
+            {
+              "payDate": "2018-05-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-06-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-07-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2016_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2018-10-22",
+          "payments": [
+            {
+              "payDate": "2018-08-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-09-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-10-22",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2017",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2017,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2017_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2019-01-21",
+          "payments": [
+            {
+              "payDate": "2018-11-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2018-12-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-01-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2017_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2019-06-21",
+          "payments": [
+            {
+              "payDate": "2019-02-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-03-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-06-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2018",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2018,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2018_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2019-09-23",
+          "payments": [
+            {
+              "payDate": "2019-07-22",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-08-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-09-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2018_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2019-12-23",
+          "payments": [
+            {
+              "payDate": "2019-10-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-11-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2019-12-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2019",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2019,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2019_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2020-03-23",
+          "payments": [
+            {
+              "payDate": "2020-01-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-02-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-03-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2019_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2020-06-22",
+          "payments": [
+            {
+              "payDate": "2020-04-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-05-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-06-22",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2020",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2020,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2020_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2020-09-21",
+          "payments": [
+            {
+              "payDate": "2020-07-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-08-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-09-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2020_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2020-12-21",
+          "payments": [
+            {
+              "payDate": "2020-10-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-11-23",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2020-12-21",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 300000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2022",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2022,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2022_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 150000,
+          "isPaid": true,
+          "isExcluded": false,
+          "payDate": "2026-03-20",
+          "payments": [
+            {
+              "payDate": "2026-01-20",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2026-02-20",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2026-03-20",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        },
+        {
+          "id": "seed_dd_seed_유락준_2022_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 100000,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "2026-06-22",
+          "payments": [
+            {
+              "payDate": "2026-05-20",
+              "amount": 50000,
+              "linkedTransactionId": null
+            },
+            {
+              "payDate": "2026-06-22",
+              "amount": 50000,
+              "linkedTransactionId": null
+            }
+          ]
+        }
+      ],
+      "paidAmount": 250000,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2023",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2023,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2023_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "",
+          "payments": []
+        },
+        {
+          "id": "seed_dd_seed_유락준_2023_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
           "payDate": "",
           "payments": []
         }
       ],
-      "paidAmount": 150000,
+      "paidAmount": 0,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2024",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2024,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2024_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "",
+          "payments": []
+        },
+        {
+          "id": "seed_dd_seed_유락준_2024_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "",
+          "payments": []
+        }
+      ],
+      "paidAmount": 0,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2025",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2025,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2025_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "",
+          "payments": []
+        },
+        {
+          "id": "seed_dd_seed_유락준_2025_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "",
+          "payments": []
+        }
+      ],
+      "paidAmount": 0,
+      "status": ""
+    },
+    {
+      "id": "seed_dues_seed_유락준_2026",
+      "memberId": "seed_유락준",
+      "memberName": "유락준",
+      "year": 2026,
+      "totalTargetAmount": 300000,
+      "paymentMethod": "HALF_YEARLY",
+      "details": [
+        {
+          "id": "seed_dd_seed_유락준_2026_상반기",
+          "termLabel": "상반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "",
+          "payments": []
+        },
+        {
+          "id": "seed_dd_seed_유락준_2026_하반기",
+          "termLabel": "하반기",
+          "amount": 150000,
+          "paidAmount": 0,
+          "isPaid": false,
+          "isExcluded": false,
+          "payDate": "",
+          "payments": []
+        }
+      ],
+      "paidAmount": 0,
       "status": ""
     },
     {
@@ -13083,7 +14534,7 @@
     },
     {
       "id": "seed_hist_009",
-      "date": 1390057200000,
+      "date": 1390100400000,
       "content": "회원 사망",
       "details": "이세희(사망)",
       "note": null
@@ -13146,7 +14597,7 @@
     },
     {
       "id": "seed_hist_018",
-      "date": 1782486000000,
+      "date": 1782529200000,
       "content": "12대 회장 및 총무 선출",
       "details": "회장 : 김영섭, 총무 : 김성겸",
       "note": null
