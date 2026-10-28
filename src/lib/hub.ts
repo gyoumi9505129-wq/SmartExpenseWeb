@@ -77,6 +77,7 @@ export async function createMeeting(params: {
     duesPaymentMethod: "HALF_YEARLY",
     initialBalance: 0,
     currentBalance: 0,
+    yearBalances: {},
   };
   const ref = await addDoc(meetingCol, payload);
   await setDoc(

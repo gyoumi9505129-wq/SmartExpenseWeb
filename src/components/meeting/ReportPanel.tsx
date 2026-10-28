@@ -1,48 +1,91 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { YearSelect } from "@/components/YearSelect";
+import { FIRST_LEDGER_YEAR } from "@/lib/balance";
 import { currentSystemYear } from "@/lib/duesSync";
 import { formatWon } from "@/lib/format";
+import { fetchTransactionsForYear } from "@/lib/meetings";
 import {
   availableReportYears,
   buildYearlyReport,
   type CategorySummary,
 } from "@/lib/yearlyReport";
-import type { DuesRecord, Transaction } from "@/lib/types";
+import type { DuesRecord, Transaction, YearBalances } from "@/lib/types";
 
 type Props = {
-  transactions: Transaction[];
+  meetingId: string;
+  isSample?: boolean;
+  sampleTransactions?: Transaction[];
   dues: DuesRecord[];
+  yearBalances: YearBalances;
   initialBalance: number | null;
 };
 
 export function ReportPanel({
-  transactions,
+  meetingId,
+  isSample = false,
+  sampleTransactions = [],
   dues,
+  yearBalances,
   initialBalance,
 }: Props) {
-  const years = useMemo(
-    () => availableReportYears(transactions, dues),
-    [transactions, dues]
-  );
+  const years = useMemo(() => {
+    const list = availableReportYears(
+      yearBalances,
+      sampleTransactions,
+      dues
+    );
+    if (list.length > 0) return list;
+    const fallback: number[] = [];
+    for (let y = currentSystemYear(); y >= FIRST_LEDGER_YEAR; y -= 1) {
+      fallback.push(y);
+    }
+    return fallback;
+  }, [yearBalances, sampleTransactions, dues]);
   const [year, setYear] = useState(() => currentSystemYear());
+  const [yearTxs, setYearTxs] = useState<Transaction[]>([]);
   const [detailCategory, setDetailCategory] = useState<string | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (isSample) {
+          const prefix = `${year}-`;
+          if (!cancelled) {
+            setYearTxs(
+              sampleTransactions.filter((t) => t.date.startsWith(prefix))
+            );
+          }
+          return;
+        }
+        const txs = await fetchTransactionsForYear(meetingId, year);
+        if (!cancelled) setYearTxs(txs);
+      } catch {
+        if (!cancelled) setYearTxs([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [meetingId, year, isSample, sampleTransactions]);
+
   const report = useMemo(
-    () => buildYearlyReport(year, transactions, dues, initialBalance),
-    [year, transactions, dues, initialBalance]
+    () =>
+      buildYearlyReport(year, yearTxs, dues, {
+        yearBalances,
+        initialBalance,
+      }),
+    [year, yearTxs, dues, yearBalances, initialBalance]
   );
 
   const detailItems = useMemo(() => {
     if (!detailCategory) return [];
-    const prefix = `${year}-`;
-    return transactions
-      .filter(
-        (tx) => tx.date.startsWith(prefix) && tx.category === detailCategory
-      )
+    return yearTxs
+      .filter((tx) => tx.category === detailCategory)
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [detailCategory, year, transactions]);
+  }, [detailCategory, yearTxs]);
 
   const incomeSlices = report.categorySummaries.filter((c) => c.income > 0);
   const expenseSlices = report.categorySummaries.filter((c) => c.expense > 0);

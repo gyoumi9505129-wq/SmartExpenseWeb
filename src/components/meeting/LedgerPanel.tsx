@@ -25,6 +25,10 @@ type Props = {
   members: Member[];
   dues: DuesRecord[];
   canEdit: boolean;
+  /** 서버에서 이미 연도 필터된 목록 — 추가 클라이언트 연도 필터 없음 */
+  yearFilter: number;
+  yearOptions: number[];
+  onYearChange: (year: number) => void;
   onChanged: () => Promise<void>;
 };
 
@@ -51,17 +55,15 @@ const emptyForm = (): FormState => ({
   paymentMode: "FULL",
 });
 
-function yearFromDate(date: string): number | null {
-  const y = Number(date?.slice(0, 4));
-  return Number.isFinite(y) && y > 1900 ? y : null;
-}
-
 export function LedgerPanel({
   meetingId,
   rows,
   members,
   dues,
   canEdit,
+  yearFilter,
+  yearOptions,
+  onYearChange,
   onChanged,
 }: Props) {
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -69,32 +71,15 @@ export function LedgerPanel({
   const [form, setForm] = useState<FormState>(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** 0 = 전체, 기본은 현재 연도 */
-  const [yearFilter, setYearFilter] = useState(() => new Date().getFullYear());
   const [page, setPage] = useState(1);
-
-  const yearOptions = useMemo(() => {
-    const set = new Set<number>();
-    set.add(new Date().getFullYear());
-    for (const row of rows) {
-      const y = yearFromDate(row.date);
-      if (y != null) set.add(y);
-    }
-    return [...set].sort((a, b) => b - a);
-  }, [rows]);
-
-  const filtered = useMemo(() => {
-    if (yearFilter === 0) return rows;
-    return rows.filter((row) => yearFromDate(row.date) === yearFilter);
-  }, [rows, yearFilter]);
 
   useEffect(() => {
     setPage(1);
   }, [yearFilter, rows.length]);
 
   const pageRows = useMemo(
-    () => paginateSlice(filtered, page, PAGE_SIZE),
-    [filtered, page]
+    () => paginateSlice(rows, page, PAGE_SIZE),
+    [rows, page]
   );
 
   const cats = useMemo(() => categoriesFor(form.type), [form.type]);
@@ -313,10 +298,9 @@ export function LedgerPanel({
             연도
             <select
               value={yearFilter}
-              onChange={(e) => setYearFilter(Number(e.target.value))}
+              onChange={(e) => onYearChange(Number(e.target.value))}
               className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm"
             >
-              <option value={0}>전체</option>
               {yearOptions.map((y) => (
                 <option key={y} value={y}>
                   {y}년
@@ -561,11 +545,9 @@ export function LedgerPanel({
         </div>
       ) : null}
 
-      {filtered.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="mt-8 text-sm text-zinc-500">
-          {yearFilter > 0
-            ? `${yearFilter}년 장부 내역이 없습니다.`
-            : "장부 내역이 없습니다."}
+          {`${yearFilter}년 장부 내역이 없습니다.`}
         </p>
       ) : (
         <>
@@ -695,7 +677,7 @@ export function LedgerPanel({
           <ListPagination
             page={page}
             pageSize={PAGE_SIZE}
-            total={filtered.length}
+            total={rows.length}
             onPageChange={setPage}
           />
         </>

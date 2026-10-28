@@ -24,6 +24,10 @@ export const SAMPLE_MEETING: Meeting = {
   invitedEmails: [],
   initialBalance: 0,
   currentBalance: 14794067,
+  yearBalances: {
+    "2025": { openingBalance: 14494067, closingBalance: 14494067 },
+    "2026": { openingBalance: 14494067, closingBalance: 14794067 },
+  },
   duesPaymentMethod: "HALF_YEARLY",
 };
 

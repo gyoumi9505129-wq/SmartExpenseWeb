@@ -6,6 +6,14 @@ export type UserProfile = {
   profileCompleted: boolean;
 };
 
+/** 연도별 BS 이월 잔액 (meetings.yearBalances["2025"]) */
+export type YearBalance = {
+  openingBalance: number;
+  closingBalance: number;
+};
+
+export type YearBalances = Record<string, YearBalance>;
+
 export type Meeting = {
   id: string;
   name: string;
@@ -25,8 +33,15 @@ export type Meeting = {
   inactiveMemberUids: string[];
   inactiveMemberReasons: Record<string, string>;
   invitedEmails: string[];
+  /** 창립 전 절대 기초. 한우리는 보통 0(이월금 전표로 흡수) */
   initialBalance: number | null;
+  /** 현재 잔액 캐시 = 최신 연도 기말 */
   currentBalance: number | null;
+  /**
+   * 연도별 기초/기말. opening(Y)=closing(Y-1).
+   * 장부 연도 조회·결산·특수 재정산의 공통 기준.
+   */
+  yearBalances: YearBalances;
   duesPaymentMethod: string;
 };
 

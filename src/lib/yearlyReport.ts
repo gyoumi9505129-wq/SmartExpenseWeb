@@ -1,7 +1,11 @@
-import { isTransferCategory } from "./balance";
+import {
+  currentBalanceFromYearBalances,
+  isTransferCategory,
+  yearBalanceEntry,
+} from "./balance";
 import { shortCategory } from "./categories";
 import { currentSystemYear } from "./duesSync";
-import type { DuesRecord, Transaction } from "./types";
+import type { DuesRecord, Transaction, YearBalances } from "./types";
 
 export type CategorySummary = {
   category: string;
@@ -23,6 +27,7 @@ export type YearlyReport = {
   duesTotal: number;
   ledgerIncome: number;
   ledgerExpense: number;
+  /** 해당 연도 말 BS 잔액 (전년 이월 + 당해 운영) */
   yearEndBalance: number;
   categorySummaries: CategorySummary[];
   transfers: TransferSummary[];
@@ -59,12 +64,19 @@ function yearFromDate(date: string): number | null {
 }
 
 export function availableReportYears(
+  yearBalances: YearBalances | null | undefined,
   transactions: Transaction[],
   dues: DuesRecord[]
 ): number[] {
   const set = new Set<number>();
   const now = currentSystemYear();
   set.add(now);
+  if (yearBalances) {
+    for (const key of Object.keys(yearBalances)) {
+      const y = Number(key);
+      if (y >= 2011 && y <= now) set.add(y);
+    }
+  }
   for (const tx of transactions) {
     const y = yearFromDate(tx.date);
     if (y != null && y >= 2011 && y <= now) set.add(y);
@@ -88,30 +100,35 @@ function duesPaidForYear(dues: DuesRecord[], year: number): number {
   return sum;
 }
 
+/**
+ * 결산. transactions 는 해당 연도(또는 그 이상) 전표.
+ * yearEndBalance 는 yearBalances[year].closing 을 우선하고,
+ * 없으면 opening + 당해 수입−지출로 계산.
+ */
 export function buildYearlyReport(
   year: number,
   transactions: Transaction[],
   dues: DuesRecord[],
-  initialBalance: number | null = 0
+  options?: {
+    yearBalances?: YearBalances | null;
+    initialBalance?: number | null;
+    yearOpening?: number | null;
+  }
 ): YearlyReport {
   const yearPrefix = `${year}-`;
-  const yearEnd = `${year}-12-31`;
   let ledgerIncome = 0;
   let ledgerExpense = 0;
-  let cumIncome = 0;
-  let cumExpense = 0;
   const byCategory = new Map<string, { income: number; expense: number }>();
   const transfers: TransferSummary[] = [];
 
   for (const tx of transactions) {
+    if (!tx.date.startsWith(yearPrefix)) continue;
     const isTransfer = isTransferCategory(tx.category);
     const income = Math.max(0, tx.incomeAmount || 0);
     const expense = Math.max(0, tx.expenseAmount || 0);
-    const inYear = tx.date.startsWith(yearPrefix);
-    const upToYearEnd = tx.date <= yearEnd;
 
     if (isTransfer) {
-      if (inYear && expense > 0) {
+      if (expense > 0) {
         transfers.push({
           id: tx.id,
           date: tx.date,
@@ -122,26 +139,25 @@ export function buildYearlyReport(
       continue;
     }
 
-    if (inYear) {
-      ledgerIncome += income;
-      ledgerExpense += expense;
-      const key = tx.category || "미분류";
-      const cur = byCategory.get(key) || { income: 0, expense: 0 };
-      cur.income += income;
-      cur.expense += expense;
-      byCategory.set(key, cur);
-    }
-
-    if (upToYearEnd) {
-      cumIncome += income;
-      cumExpense += expense;
-    }
+    ledgerIncome += income;
+    ledgerExpense += expense;
+    const key = tx.category || "미분류";
+    const cur = byCategory.get(key) || { income: 0, expense: 0 };
+    cur.income += income;
+    cur.expense += expense;
+    byCategory.set(key, cur);
   }
 
-  const initial =
-    typeof initialBalance === "number" && initialBalance > 0
-      ? initialBalance
-      : 0;
+  const stored = yearBalanceEntry(options?.yearBalances, year);
+  const opening =
+    stored?.openingBalance ??
+    (typeof options?.yearOpening === "number"
+      ? options.yearOpening
+      : resolveFallbackOpening(year, options));
+
+  const yearEndBalance =
+    stored?.closingBalance ?? opening + ledgerIncome - ledgerExpense;
+
   const duesTotal = duesPaidForYear(dues, year);
   const categorySummaries: CategorySummary[] = [...byCategory.entries()]
     .map(([category, amounts]) => ({
@@ -164,7 +180,7 @@ export function buildYearlyReport(
     duesTotal,
     ledgerIncome,
     ledgerExpense,
-    yearEndBalance: initial + cumIncome - cumExpense,
+    yearEndBalance,
     categorySummaries,
     transfers,
     isEmpty:
@@ -173,4 +189,32 @@ export function buildYearlyReport(
       ledgerExpense === 0 &&
       categorySummaries.length === 0,
   };
+}
+
+function resolveFallbackOpening(
+  year: number,
+  options?: {
+    yearBalances?: YearBalances | null;
+    initialBalance?: number | null;
+  }
+): number {
+  if (options?.yearBalances) {
+    const earlier = Object.keys(options.yearBalances)
+      .map(Number)
+      .filter((y) => y < year)
+      .sort((a, b) => b - a);
+    if (earlier.length > 0) {
+      return (
+        options.yearBalances[String(earlier[0]!)]?.closingBalance ??
+        currentBalanceFromYearBalances(
+          options.yearBalances,
+          options.initialBalance
+        )
+      );
+    }
+  }
+  return typeof options?.initialBalance === "number" &&
+    options.initialBalance > 0
+    ? options.initialBalance
+    : 0;
 }

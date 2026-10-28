@@ -8,13 +8,18 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
 import { moneyNumber, todayIsoDate } from "./format";
+import { yearFromIsoDate } from "./balance";
 import {
   buildDuesPaymentNote,
+  currentSystemYear,
   detailRemaining,
   REGULAR_DUES_CATEGORY,
 } from "./duesSync";
 import { createTransaction, deleteTransaction, deleteTransactionById, type LedgerInput } from "./ledger";
-import { fetchTransactions } from "./meetings";
+import {
+  fetchTransactionById,
+  fetchTransactionsForYear,
+} from "./meetings";
 import { COLLECTIONS } from "./paths";
 import type {
   DuesDetail,
@@ -529,7 +534,6 @@ async function deleteMatchingLedgerForInstallment(params: {
     linkedTransactionId,
   } = params;
 
-  const txs = await fetchTransactions(meetingId);
   const expectedNote = buildDuesPaymentNote(
     dues.memberName,
     dues.year,
@@ -541,8 +545,16 @@ async function deleteMatchingLedgerForInstallment(params: {
 
   // 1) 명시 링크
   if (linkedTransactionId) {
-    const byId = txs.find((t) => t.id === linkedTransactionId);
+    const byId = await fetchTransactionById(meetingId, linkedTransactionId);
     if (byId) idToDelete = byId.id;
+  }
+
+  const payYear = yearFromIsoDate(payDate) ?? dues.year;
+  const years = [...new Set([dues.year, payYear, currentSystemYear()])];
+  const txs: Transaction[] = [];
+  for (const y of years) {
+    const part = await fetchTransactionsForYear(meetingId, y);
+    txs.push(...part);
   }
 
   // 2) 회비 회차 링크 + 일자·금액 (1건만)
@@ -719,7 +731,15 @@ async function reconcileOrphanLedgersForDetail(params: {
   remainingPayments: { payDate: string; amount: number; linkedTransactionId?: string | null }[];
 }): Promise<void> {
   const { meetingId, dues, detailId, termLabel, remainingPayments } = params;
-  const txs = await fetchTransactions(meetingId);
+  const years = new Set<number>([dues.year, currentSystemYear()]);
+  for (const p of remainingPayments) {
+    const y = yearFromIsoDate(p.payDate);
+    if (y != null) years.add(y);
+  }
+  const txs: Transaction[] = [];
+  for (const y of years) {
+    txs.push(...(await fetchTransactionsForYear(meetingId, y)));
+  }
   const expectedNote = buildDuesPaymentNote(
     dues.memberName,
     dues.year,

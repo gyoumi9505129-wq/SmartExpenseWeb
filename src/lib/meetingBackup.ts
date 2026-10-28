@@ -23,7 +23,8 @@ import type {
 import { fetchDues } from "./dues";
 import { fetchEventExpenses } from "./eventExpenses";
 import { fetchMembers, fetchMeeting, fetchTransactions } from "./meetings";
-import { syncMeetingBalance } from "./ledger";
+import { rebuildMeetingYearBalances } from "./ledger";
+import type { YearBalances } from "./types";
 
 export const BACKUP_FORMAT = "smartexpense-meeting-backup";
 export const BACKUP_VERSION = 1;
@@ -61,6 +62,7 @@ export type MeetingBackupPayload = {
     duesPaymentMethod: string;
     initialBalance: number | null;
     currentBalance: number | null;
+    yearBalances?: YearBalances;
   };
   members: Member[];
   transactions: Transaction[];
@@ -154,6 +156,7 @@ export async function exportMeetingBackup(
       duesPaymentMethod: meeting.duesPaymentMethod || "HALF_YEARLY",
       initialBalance: meeting.initialBalance,
       currentBalance: meeting.currentBalance,
+      yearBalances: meeting.yearBalances || {},
     },
     members,
     transactions,
@@ -250,6 +253,7 @@ export async function clearMeetingData(
   await updateDoc(doc(db, COLLECTIONS.MEETINGS, meetingId), {
     currentBalance: 0,
     initialBalance: 0,
+    yearBalances: {},
   });
 }
 
@@ -332,6 +336,7 @@ export async function restoreMeetingBackup(
       duesPaymentMethod: meta.duesPaymentMethod || "HALF_YEARLY",
       initialBalance: meta.initialBalance ?? 0,
       currentBalance: meta.currentBalance ?? 0,
+      yearBalances: meta.yearBalances || {},
     });
     try {
       await setDoc(
@@ -462,8 +467,8 @@ export async function restoreMeetingBackup(
   });
   await commitChunks(db, accOps, onProgress, "계좌");
 
-  onProgress?.("잔액 재계산 중…");
-  await syncMeetingBalance(meetingId, meta?.initialBalance ?? 0);
+  onProgress?.("연도별 잔액 재계산 중…");
+  await rebuildMeetingYearBalances(meetingId, meta?.initialBalance ?? 0);
   onProgress?.("복원 완료");
 }
 

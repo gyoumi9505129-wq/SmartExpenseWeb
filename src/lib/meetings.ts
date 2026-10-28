@@ -9,7 +9,13 @@ import {
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
-import type { Meeting, Member, Transaction, UserProfile } from "./types";
+import type {
+  Meeting,
+  Member,
+  Transaction,
+  UserProfile,
+  YearBalances,
+} from "./types";
 import { isPrimaryMeetingName } from "./primaryMeeting";
 import { canAccessMeeting, isHanuriSharedViewer, isSystemAdmin } from "./roles";
 
@@ -35,6 +41,62 @@ function asStringMap(v: unknown): Record<string, string> {
   return out;
 }
 
+function asYearBalances(v: unknown): YearBalances {
+  if (!v || typeof v !== "object") return {};
+  const out: YearBalances = {};
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (!val || typeof val !== "object") continue;
+    const row = val as Record<string, unknown>;
+    const opening =
+      typeof row.openingBalance === "number" ? row.openingBalance : null;
+    const closing =
+      typeof row.closingBalance === "number" ? row.closingBalance : null;
+    if (opening == null || closing == null) continue;
+    out[k] = { openingBalance: opening, closingBalance: closing };
+  }
+  return out;
+}
+
+function mapTransaction(id: string, data: DocumentData): Transaction {
+  const income =
+    typeof data.incomeAmount === "number"
+      ? data.incomeAmount
+      : typeof data.amount === "number" &&
+          asString(data.type).toUpperCase() === "INCOME"
+        ? data.amount
+        : 0;
+  const expense =
+    typeof data.expenseAmount === "number"
+      ? data.expenseAmount
+      : typeof data.amount === "number" &&
+          asString(data.type).toUpperCase() === "EXPENSE"
+        ? data.amount
+        : 0;
+  return {
+    id,
+    date: asString(data.date) || asString(data.transactionDate),
+    type: asString(data.type),
+    category: asString(data.category),
+    description:
+      asString(data.description) || asString(data.memo) || asString(data.note),
+    amount:
+      typeof data.amount === "number" ? data.amount : Math.max(income, expense),
+    incomeAmount: income,
+    expenseAmount: expense,
+    memberId: asString(data.memberId) || null,
+    note: asString(data.note) || null,
+    linkedDuesDetailId: asString(data.linkedDuesDetailId) || null,
+  };
+}
+
+function sortTransactionsNewestFirst(rows: Transaction[]): Transaction[] {
+  rows.sort((a, b) => {
+    const byDate = b.date.localeCompare(a.date);
+    return byDate !== 0 ? byDate : b.id.localeCompare(a.id);
+  });
+  return rows;
+}
+
 export function mapMeeting(id: string, data: DocumentData): Meeting {
   return {
     id,
@@ -55,6 +117,7 @@ export function mapMeeting(id: string, data: DocumentData): Meeting {
     invitedEmails: asStringArray(data.invitedEmails),
     initialBalance: asNumber(data.initialBalance),
     currentBalance: asNumber(data.currentBalance),
+    yearBalances: asYearBalances(data.yearBalances),
     duesPaymentMethod: asString(data.duesPaymentMethod),
   };
 }
@@ -148,54 +211,67 @@ export async function fetchMembers(meetingId: string): Promise<Member[]> {
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 }
 
+function transactionsCollection(meetingId: string) {
+  return collection(
+    getFirebaseDb(),
+    COLLECTIONS.MEETINGS,
+    meetingId,
+    COLLECTIONS.TRANSACTIONS
+  );
+}
+
+export async function fetchTransactionById(
+  meetingId: string,
+  transactionId: string
+): Promise<Transaction | null> {
+  if (!transactionId) return null;
+  const snap = await getDoc(
+    doc(
+      getFirebaseDb(),
+      COLLECTIONS.MEETINGS,
+      meetingId,
+      COLLECTIONS.TRANSACTIONS,
+      transactionId
+    )
+  );
+  if (!snap.exists()) return null;
+  return mapTransaction(snap.id, snap.data());
+}
+
 /**
- * 장부 전체 조회. 건수·잔액 SSOT 이므로 임의 상한으로 자르지 않는다.
- * @param limitCount 지정 시에만 최신 N건으로 제한 (목록 미리보기용)
+ * 해당 연도(YYYY-01-01 ~ YYYY-12-31) 장부만 조회.
+ * 화면 장부·연도 잔액 재계산의 기본 경로.
+ */
+export async function fetchTransactionsForYear(
+  meetingId: string,
+  year: number
+): Promise<Transaction[]> {
+  const start = `${year}-01-01`;
+  const end = `${year}-12-31`;
+  const snap = await getDocs(
+    query(
+      transactionsCollection(meetingId),
+      where("date", ">=", start),
+      where("date", "<=", end)
+    )
+  );
+  return sortTransactionsNewestFirst(
+    snap.docs.map((d) => mapTransaction(d.id, d.data()))
+  );
+}
+
+/**
+ * 장부 전체 조회. 백업·일회성 재정산 등 특수 작업용.
+ * 일반 화면 로드에서는 fetchTransactionsForYear 를 쓴다.
  */
 export async function fetchTransactions(
   meetingId: string,
   limitCount?: number
 ): Promise<Transaction[]> {
-  const snap = await getDocs(
-    collection(
-      getFirebaseDb(),
-      COLLECTIONS.MEETINGS,
-      meetingId,
-      COLLECTIONS.TRANSACTIONS
-    )
+  const snap = await getDocs(transactionsCollection(meetingId));
+  const rows = sortTransactionsNewestFirst(
+    snap.docs.map((d) => mapTransaction(d.id, d.data()))
   );
-  const rows = snap.docs.map((d) => {
-    const data = d.data();
-    const income =
-      typeof data.incomeAmount === "number"
-        ? data.incomeAmount
-        : typeof data.amount === "number" && asString(data.type).toUpperCase() === "INCOME"
-          ? data.amount
-          : 0;
-    const expense =
-      typeof data.expenseAmount === "number"
-        ? data.expenseAmount
-        : typeof data.amount === "number" && asString(data.type).toUpperCase() === "EXPENSE"
-          ? data.amount
-          : 0;
-    return {
-      id: d.id,
-      date: asString(data.date) || asString(data.transactionDate),
-      type: asString(data.type),
-      category: asString(data.category),
-      description: asString(data.description) || asString(data.memo) || asString(data.note),
-      amount: typeof data.amount === "number" ? data.amount : Math.max(income, expense),
-      incomeAmount: income,
-      expenseAmount: expense,
-      memberId: asString(data.memberId) || null,
-      note: asString(data.note) || null,
-      linkedDuesDetailId: asString(data.linkedDuesDetailId) || null,
-    } satisfies Transaction;
-  });
-  rows.sort((a, b) => {
-    const byDate = b.date.localeCompare(a.date);
-    return byDate !== 0 ? byDate : b.id.localeCompare(a.id);
-  });
   if (limitCount != null && limitCount > 0) {
     return rows.slice(0, limitCount);
   }

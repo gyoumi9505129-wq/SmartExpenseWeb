@@ -27,15 +27,16 @@ import {
   resolvePrimaryMeeting,
 } from "@/lib/access";
 import { ensureHanuriSharedViewerAccess } from "@/lib/hub";
-import { computeOperatingBalance } from "@/lib/balance";
+import { FIRST_LEDGER_YEAR } from "@/lib/balance";
+import { currentSystemYear } from "@/lib/duesSync";
 import { fetchDues } from "@/lib/dues";
 import { fetchEventExpenses } from "@/lib/eventExpenses";
 import { formatWon } from "@/lib/format";
-import { syncMeetingBalance } from "@/lib/ledger";
+import { ensureMeetingYearBalances } from "@/lib/ledger";
 import {
   fetchMeeting,
   fetchMembers,
-  fetchTransactions,
+  fetchTransactionsForYear,
 } from "@/lib/meetings";
 import {
   canAccessMeeting,
@@ -94,6 +95,9 @@ function MeetingDetailInner() {
   const [dues, setDues] = useState<DuesRecord[]>([]);
   const [eventExpenses, setEventExpenses] = useState<EventExpense[]>([]);
   const [myRequest, setMyRequest] = useState<JoinRequest | null>(null);
+  const [ledgerYear, setLedgerYear] = useState(() => currentSystemYear());
+  const ledgerYearRef = useRef(ledgerYear);
+  ledgerYearRef.current = ledgerYear;
   const [busy, setBusy] = useState(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +130,7 @@ function MeetingDetailInner() {
         setTransactions(SAMPLE_TRANSACTIONS);
         setDues(SAMPLE_DUES);
         setEventExpenses([]);
+        setLedgerYear(currentSystemYear());
         if (primary) {
           const req = await fetchMyAccessRequest(primary.id, user.uid);
           setMyRequest(req);
@@ -135,7 +140,7 @@ function MeetingDetailInner() {
         return;
       }
 
-      const m = await fetchMeeting(meetingIdParam);
+      let m = await fetchMeeting(meetingIdParam);
       if (!m) throw new Error("모임을 찾을 수 없습니다.");
       if (!canAccessMeeting(user.uid, user.email, m)) {
         router.replace(
@@ -143,22 +148,28 @@ function MeetingDetailInner() {
         );
         return;
       }
+
+      // 편집 가능 시 yearBalances 없으면 연도 순회 재정산 (한 해씩 로드)
+      if (canEditMeeting(user.uid, user.email, m)) {
+        const synced = await ensureMeetingYearBalances(meetingIdParam);
+        if (synced) {
+          m = {
+            ...m,
+            currentBalance: synced.currentBalance,
+            yearBalances: synced.yearBalances,
+            initialBalance: synced.initialBalance,
+          };
+        }
+      }
+
+      const year = ledgerYearRef.current || currentSystemYear();
       const [ms, txs, events] = await Promise.all([
         fetchMembers(meetingIdParam),
-        fetchTransactions(meetingIdParam),
+        fetchTransactionsForYear(meetingIdParam, year),
         fetchEventExpenses(meetingIdParam),
       ]);
       const ds = await fetchDues(meetingIdParam, ms);
-      const freshBalance = computeOperatingBalance(txs, m.initialBalance);
-      if (
-        canEditMeeting(user.uid, user.email, m) &&
-        m.currentBalance !== freshBalance
-      ) {
-        await syncMeetingBalance(meetingIdParam, m.initialBalance);
-        setMeeting({ ...m, currentBalance: freshBalance });
-      } else {
-        setMeeting(m);
-      }
+      setMeeting(m);
       setRealMeeting(m);
       setMembers(ms);
       setTransactions(txs);
@@ -177,6 +188,33 @@ function MeetingDetailInner() {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  const loadLedgerYear = useCallback(
+    async (year: number) => {
+      setLedgerYear(year);
+      if (isSample || !meetingIdParam) {
+        if (isSample) {
+          setTransactions(
+            SAMPLE_TRANSACTIONS.filter((t) => t.date.startsWith(`${year}-`))
+          );
+        }
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      try {
+        const txs = await fetchTransactionsForYear(meetingIdParam, year);
+        setTransactions(txs);
+      } catch (e) {
+        setError(
+          e instanceof Error ? e.message : "장부 연도를 불러오지 못했습니다."
+        );
+      } finally {
+        setBusy(false);
+      }
+    },
+    [isSample, meetingIdParam]
+  );
 
   const role = useMemo(() => {
     if (isSample) return "MEMBER" as const;
@@ -206,13 +244,16 @@ function MeetingDetailInner() {
     return base;
   }, [canManageAccounts, isSample]);
 
-  const selectTab = useCallback(
-    (next: Tab) => {
-      setTab(next);
-      void reload();
-    },
-    [reload]
-  );
+  const selectTab = useCallback((next: Tab) => {
+    setTab(next);
+  }, []);
+
+  const ledgerYearOptions = useMemo(() => {
+    const now = currentSystemYear();
+    const years: number[] = [];
+    for (let y = now; y >= FIRST_LEDGER_YEAR; y -= 1) years.push(y);
+    return years;
+  }, []);
 
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
 
@@ -251,10 +292,8 @@ function MeetingDetailInner() {
     }
   }, [canManageAccounts, tab]);
 
-  const balance = useMemo(
-    () => computeOperatingBalance(transactions, meeting?.initialBalance ?? 0),
-    [meeting?.initialBalance, transactions]
-  );
+  /** 대시보드 현재 잔액 — 연도 필터와 무관, 저장된 최신 잔액 */
+  const balance = meeting?.currentBalance ?? 0;
 
   const memberCounts = useMemo(() => {
     let active = 0;
@@ -420,7 +459,7 @@ function MeetingDetailInner() {
             valueClassName={
               balance < 0 ? "text-red-600" : "text-blue-600"
             }
-            hint="장부 전체 수입 − 지출 (계좌 이체 제외)"
+            hint="연도 이월 기준 현재 잔액 (장부 연도 조회와 무관)"
           />
           <StatCard
             label="회원"
@@ -472,12 +511,15 @@ function MeetingDetailInner() {
             ) : null}
             {tab === "ledger" ? (
               <LedgerPanel
-                key={`ledger-${transactions.length}-${balance}`}
+                key={`ledger-${meetingIdParam}`}
                 meetingId={isSample ? SAMPLE_MEETING_ID : meetingIdParam}
                 rows={transactions}
                 members={members}
                 dues={dues}
                 canEdit={canEdit}
+                yearFilter={ledgerYear}
+                yearOptions={ledgerYearOptions}
+                onYearChange={loadLedgerYear}
                 onChanged={reload}
               />
             ) : null}
@@ -515,9 +557,12 @@ function MeetingDetailInner() {
             ) : null}
             {tab === "report" ? (
               <ReportPanel
-                key={`report-${transactions.length}-${dues.length}`}
-                transactions={transactions}
+                key={`report-${meetingIdParam}-${dues.length}`}
+                meetingId={isSample ? SAMPLE_MEETING_ID : meetingIdParam}
+                isSample={isSample}
+                sampleTransactions={SAMPLE_TRANSACTIONS}
                 dues={dues}
+                yearBalances={meeting?.yearBalances || {}}
                 initialBalance={meeting?.initialBalance ?? 0}
               />
             ) : null}

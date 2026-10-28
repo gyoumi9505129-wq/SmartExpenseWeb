@@ -5,11 +5,25 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import { computeOperatingBalance } from "./balance";
+import {
+  FIRST_LEDGER_YEAR,
+  buildYearBalancesFromTransactions,
+  computeOperatingBalance,
+  needsYearBalanceRebuild,
+  resolveYearOpening,
+  sanitizeInitialBalance,
+  yearFromIsoDate,
+} from "./balance";
+import { currentSystemYear } from "./duesSync";
 import { getFirebaseDb } from "./firebase";
-import { fetchTransactions } from "./meetings";
+import {
+  fetchMeeting,
+  fetchTransactionById,
+  fetchTransactions,
+  fetchTransactionsForYear,
+} from "./meetings";
 import { COLLECTIONS } from "./paths";
-import type { Transaction } from "./types";
+import type { Transaction, YearBalances } from "./types";
 
 export type LedgerInput = {
   date: string;
@@ -19,6 +33,12 @@ export type LedgerInput = {
   amount: number;
   memberId?: string | null;
   linkedDuesDetailId?: string | null;
+};
+
+export type BalanceSyncResult = {
+  currentBalance: number;
+  yearBalances: YearBalances;
+  initialBalance: number;
 };
 
 function toPayload(input: LedgerInput) {
@@ -39,17 +59,173 @@ function toPayload(input: LedgerInput) {
   };
 }
 
-/** 전체 장부로 잔액을 다시 합산해 meetings.currentBalance 에 기록 (앱과 동일 SSOT) */
+async function persistBalances(
+  meetingId: string,
+  result: BalanceSyncResult
+): Promise<void> {
+  await updateDoc(doc(getFirebaseDb(), COLLECTIONS.MEETINGS, meetingId), {
+    currentBalance: result.currentBalance,
+    initialBalance: result.initialBalance,
+    yearBalances: result.yearBalances,
+  });
+}
+
+/**
+ * 연도 단위 BS 이월로 yearBalances + currentBalance 를 재계산·저장.
+ * - fromYear 이전 연도 맵은 유지하고, fromYear~toYear 만 다시 밟는다.
+ * - 특수 작업(백업 복원·강제 재정산)도 동일 경로.
+ */
+export async function syncMeetingBalancesFromYear(
+  meetingId: string,
+  fromYear: number,
+  options?: {
+    initialBalance?: number | null;
+    existingYearBalances?: YearBalances;
+    toYear?: number;
+  }
+): Promise<BalanceSyncResult> {
+  const meeting = await fetchMeeting(meetingId);
+  if (!meeting) throw new Error("모임을 찾을 수 없습니다.");
+
+  const initial = sanitizeInitialBalance(
+    options?.initialBalance ?? meeting.initialBalance
+  );
+  const toYear = options?.toYear ?? Math.max(currentSystemYear(), fromYear);
+  const startYear = Math.max(FIRST_LEDGER_YEAR, fromYear);
+
+  const yearBalances: YearBalances = {
+    ...(options?.existingYearBalances ?? meeting.yearBalances ?? {}),
+  };
+
+  // fromYear 이후 옛 항목 제거 후 재기록 (삭제된 연도 잔액 잔존 방지)
+  for (const key of Object.keys(yearBalances)) {
+    const y = Number(key);
+    if (Number.isFinite(y) && y >= startYear) {
+      delete yearBalances[key];
+    }
+  }
+
+  let opening = resolveYearOpening(startYear, yearBalances, initial);
+
+  for (let year = startYear; year <= toYear; year += 1) {
+    const yearTxs = await fetchTransactionsForYear(meetingId, year);
+    if (yearTxs.length === 0 && year < toYear) {
+      // 중간 빈 연도: 맵에 남기지 않고 opening 유지
+      continue;
+    }
+    const closing = computeOperatingBalance(yearTxs, opening);
+    yearBalances[String(year)] = {
+      openingBalance: opening,
+      closingBalance: closing,
+    };
+    opening = closing;
+  }
+
+  // 현재 연도 키가 없으면(전표 없음) 직전 기말을 현재 연도 기초=기말로 기록
+  const cy = currentSystemYear();
+  if (!yearBalances[String(cy)]) {
+    const open = resolveYearOpening(cy, yearBalances, initial);
+    yearBalances[String(cy)] = {
+      openingBalance: open,
+      closingBalance: open,
+    };
+  }
+
+  const years = Object.keys(yearBalances)
+    .map(Number)
+    .filter((y) => Number.isFinite(y))
+    .sort((a, b) => b - a);
+  const currentBalance =
+    years.length > 0
+      ? yearBalances[String(years[0]!)]!.closingBalance
+      : initial;
+
+  const result: BalanceSyncResult = {
+    currentBalance,
+    yearBalances,
+    initialBalance: initial,
+  };
+  await persistBalances(meetingId, result);
+  return result;
+}
+
+/**
+ * 전 기간을 연도별로 순회해 잔액을 재구축 (백업 복원·마이그레이션·강제 복구).
+ * 한 해씩만 메모리에 올린다.
+ */
+export async function rebuildMeetingYearBalances(
+  meetingId: string,
+  initialBalance?: number | null
+): Promise<BalanceSyncResult> {
+  return syncMeetingBalancesFromYear(meetingId, FIRST_LEDGER_YEAR, {
+    initialBalance,
+    existingYearBalances: {},
+    toYear: currentSystemYear(),
+  });
+}
+
+/**
+ * 전체 전표를 한 번에 읽어 검증용으로 재계산 (단위 테스트·감사).
+ * 운영 화면 경로에서는 쓰지 않는다.
+ */
+export async function rebuildMeetingYearBalancesFromAllTxs(
+  meetingId: string,
+  initialBalance?: number | null
+): Promise<BalanceSyncResult> {
+  const meeting = await fetchMeeting(meetingId);
+  if (!meeting) throw new Error("모임을 찾을 수 없습니다.");
+  const initial = sanitizeInitialBalance(
+    initialBalance ?? meeting.initialBalance
+  );
+  const txs = await fetchTransactions(meetingId);
+  const built = buildYearBalancesFromTransactions(txs, initial, {
+    fromYear: FIRST_LEDGER_YEAR,
+    toYear: currentSystemYear(),
+  });
+  // 현재 연도 보장
+  const cy = currentSystemYear();
+  if (!built.yearBalances[String(cy)]) {
+    const open = resolveYearOpening(cy, built.yearBalances, initial);
+    built.yearBalances[String(cy)] = {
+      openingBalance: open,
+      closingBalance: open,
+    };
+    built.currentBalance = open;
+  }
+  const result: BalanceSyncResult = {
+    currentBalance: built.currentBalance,
+    yearBalances: built.yearBalances,
+    initialBalance: initial,
+  };
+  await persistBalances(meetingId, result);
+  return result;
+}
+
+/** @deprecated 이름 호환 — 연도 이월 전체 재구축 */
 export async function syncMeetingBalance(
   meetingId: string,
   initialBalance: number | null = 0
 ): Promise<number> {
-  const txs = await fetchTransactions(meetingId);
-  const fresh = computeOperatingBalance(txs, initialBalance);
-  await updateDoc(doc(getFirebaseDb(), COLLECTIONS.MEETINGS, meetingId), {
-    currentBalance: fresh,
-  });
-  return fresh;
+  const result = await rebuildMeetingYearBalances(meetingId, initialBalance);
+  return result.currentBalance;
+}
+
+/** yearBalances 부재·불일치 시 한 번 재구축 */
+export async function ensureMeetingYearBalances(
+  meetingId: string
+): Promise<BalanceSyncResult | null> {
+  const meeting = await fetchMeeting(meetingId);
+  if (!meeting) return null;
+  if (
+    !needsYearBalanceRebuild(meeting.yearBalances, meeting.currentBalance)
+  ) {
+    return {
+      currentBalance: meeting.currentBalance ?? 0,
+      yearBalances: meeting.yearBalances || {},
+      initialBalance: sanitizeInitialBalance(meeting.initialBalance),
+    };
+  }
+  return rebuildMeetingYearBalances(meetingId, meeting.initialBalance);
 }
 
 export async function createTransaction(
@@ -66,7 +242,8 @@ export async function createTransaction(
     ),
     payload
   );
-  await syncMeetingBalance(meetingId);
+  const year = yearFromIsoDate(payload.date) ?? currentSystemYear();
+  await syncMeetingBalancesFromYear(meetingId, year);
   return ref.id;
 }
 
@@ -86,21 +263,32 @@ export async function updateTransaction(
     ),
     payload
   );
-  await syncMeetingBalance(meetingId);
+  const prevYear = yearFromIsoDate(previous.date) ?? currentSystemYear();
+  const nextYear = yearFromIsoDate(payload.date) ?? currentSystemYear();
+  await syncMeetingBalancesFromYear(
+    meetingId,
+    Math.min(prevYear, nextYear)
+  );
 }
 
 export async function deleteTransaction(
   meetingId: string,
   previous: Transaction
 ): Promise<void> {
-  await deleteTransactionById(meetingId, previous.id);
+  await deleteTransactionById(meetingId, previous.id, previous.date);
 }
 
 export async function deleteTransactionById(
   meetingId: string,
-  transactionId: string
+  transactionId: string,
+  knownDate?: string
 ): Promise<void> {
   if (!transactionId) return;
+  let year = yearFromIsoDate(knownDate || "") ?? null;
+  if (year == null) {
+    const existing = await fetchTransactionById(meetingId, transactionId);
+    year = yearFromIsoDate(existing?.date || "") ?? currentSystemYear();
+  }
   await deleteDoc(
     doc(
       getFirebaseDb(),
@@ -110,5 +298,5 @@ export async function deleteTransactionById(
       transactionId
     )
   );
-  await syncMeetingBalance(meetingId);
+  await syncMeetingBalancesFromYear(meetingId, year);
 }
