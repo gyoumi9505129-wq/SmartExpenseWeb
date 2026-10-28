@@ -501,16 +501,19 @@ function MeetingDetailInner() {
           />
         </section>
 
-        <nav className="mt-6 flex gap-1 overflow-x-auto border-b border-zinc-200 sm:gap-2">
+        <nav
+          className="mt-6 flex flex-wrap gap-x-1 gap-y-0 border-b border-zinc-200 sm:gap-x-2"
+          aria-label="모임 메뉴"
+        >
           {tabItems.map(({ id, label }) => (
             <button
               key={id}
               type="button"
               onClick={() => selectTab(id)}
-              className={`shrink-0 px-3 py-2 text-sm font-medium sm:px-4 ${
+              className={`px-2.5 py-2 text-sm font-medium sm:px-3.5 ${
                 tab === id
                   ? "border-b-2 border-emerald-600 text-emerald-700"
-                  : "text-zinc-500 hover:text-zinc-800"
+                  : "border-b-2 border-transparent text-zinc-500 hover:text-zinc-800"
               }`}
             >
               {label}
