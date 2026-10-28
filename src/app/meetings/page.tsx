@@ -112,7 +112,9 @@ function MeetingDetailInner() {
     setBusy(true);
     setError(null);
     try {
-      await ensureHanuriSharedViewerAccess(user.uid, user.email);
+      // 공용 계정만 권한 보정 (일반/관리자는 즉시 return)
+      void ensureHanuriSharedViewerAccess(user.uid, user.email);
+
       if (isSample) {
         let primary = realIdHint
           ? await fetchMeeting(realIdHint)
@@ -137,50 +139,68 @@ function MeetingDetailInner() {
         } else {
           setMyRequest(null);
         }
+        setBusy(false);
         return;
       }
 
-      let m = await fetchMeeting(meetingIdParam);
-      if (!m) throw new Error("모임을 찾을 수 없습니다.");
-      if (!canAccessMeeting(user.uid, user.email, m)) {
+      const year = ledgerYearRef.current || currentSystemYear();
+      // 첫 페인트: 모임 + 당해 장부만 (잔액 재정산·회비·경조는 뒤에서)
+      const [m0, txs] = await Promise.all([
+        fetchMeeting(meetingIdParam),
+        fetchTransactionsForYear(meetingIdParam, year),
+      ]);
+      if (!m0) throw new Error("모임을 찾을 수 없습니다.");
+      if (!canAccessMeeting(user.uid, user.email, m0)) {
         router.replace(
-          `/meetings?id=${encodeURIComponent(SAMPLE_MEETING_ID)}&realId=${encodeURIComponent(m.id)}`
+          `/meetings?id=${encodeURIComponent(SAMPLE_MEETING_ID)}&realId=${encodeURIComponent(m0.id)}`
         );
         return;
       }
 
-      // 편집 가능 시 yearBalances 없으면 연도 순회 재정산 (한 해씩 로드)
-      if (canEditMeeting(user.uid, user.email, m)) {
-        const synced = await ensureMeetingYearBalances(meetingIdParam);
-        if (synced) {
-          m = {
-            ...m,
-            currentBalance: synced.currentBalance,
-            yearBalances: synced.yearBalances,
-            initialBalance: synced.initialBalance,
-          };
-        }
-      }
-
-      const year = ledgerYearRef.current || currentSystemYear();
-      const [ms, txs, events] = await Promise.all([
-        fetchMembers(meetingIdParam),
-        fetchTransactionsForYear(meetingIdParam, year),
-        fetchEventExpenses(meetingIdParam),
-      ]);
-      const ds = await fetchDues(meetingIdParam, ms);
-      setMeeting(m);
-      setRealMeeting(m);
-      setMembers(ms);
+      setMeeting(m0);
+      setRealMeeting(m0);
       setTransactions(txs);
-      setDues(ds);
-      setEventExpenses(events);
       setMyRequest(null);
+      setBusy(false);
+
+      // 백그라운드: 회원·회비·경조 + (필요 시) yearBalances 1회 재정산
+      void (async () => {
+        try {
+          const [ms, events] = await Promise.all([
+            fetchMembers(meetingIdParam),
+            fetchEventExpenses(meetingIdParam),
+          ]);
+          const ds = await fetchDues(meetingIdParam, ms);
+          setMembers(ms);
+          setEventExpenses(events);
+          setDues(ds);
+
+          if (canEditMeeting(user.uid, user.email, m0)) {
+            const synced = await ensureMeetingYearBalances(
+              meetingIdParam,
+              m0
+            );
+            if (synced) {
+              setMeeting((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      currentBalance: synced.currentBalance,
+                      yearBalances: synced.yearBalances,
+                      initialBalance: synced.initialBalance,
+                    }
+                  : prev
+              );
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      })();
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "모임 데이터를 불러오지 못했습니다."
       );
-    } finally {
       setBusy(false);
     }
   }, [user, meetingIdParam, isSample, realIdHint, router]);

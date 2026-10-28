@@ -23,7 +23,7 @@ import {
   fetchTransactionsForYear,
 } from "./meetings";
 import { COLLECTIONS } from "./paths";
-import type { Transaction, YearBalances } from "./types";
+import type { Meeting, Transaction, YearBalances } from "./types";
 
 export type LedgerInput = {
   date: string;
@@ -150,18 +150,15 @@ export async function syncMeetingBalancesFromYear(
 }
 
 /**
- * 전 기간을 연도별로 순회해 잔액을 재구축 (백업 복원·마이그레이션·강제 복구).
- * 한 해씩만 메모리에 올린다.
+ * 전 기간 잔액 재구축.
+ * 전체 전표 1회 조회로 연도 맵을 만든다 (연도별 N회 RTT보다 초기/복구에 유리).
+ * CRUD 후 부분 갱신은 syncMeetingBalancesFromYear 를 쓴다.
  */
 export async function rebuildMeetingYearBalances(
   meetingId: string,
   initialBalance?: number | null
 ): Promise<BalanceSyncResult> {
-  return syncMeetingBalancesFromYear(meetingId, FIRST_LEDGER_YEAR, {
-    initialBalance,
-    existingYearBalances: {},
-    toYear: currentSystemYear(),
-  });
+  return rebuildMeetingYearBalancesFromAllTxs(meetingId, initialBalance);
 }
 
 /**
@@ -210,11 +207,12 @@ export async function syncMeetingBalance(
   return result.currentBalance;
 }
 
-/** yearBalances 부재·불일치 시 한 번 재구축 */
+/** yearBalances 부재·불일치 시 한 번 재구축. meeting 을 넘기면 재조회 생략. */
 export async function ensureMeetingYearBalances(
-  meetingId: string
+  meetingId: string,
+  knownMeeting?: Meeting | null
 ): Promise<BalanceSyncResult | null> {
-  const meeting = await fetchMeeting(meetingId);
+  const meeting = knownMeeting ?? (await fetchMeeting(meetingId));
   if (!meeting) return null;
   if (
     !needsYearBalanceRebuild(meeting.yearBalances, meeting.currentBalance)
@@ -225,7 +223,10 @@ export async function ensureMeetingYearBalances(
       initialBalance: sanitizeInitialBalance(meeting.initialBalance),
     };
   }
-  return rebuildMeetingYearBalances(meetingId, meeting.initialBalance);
+  return rebuildMeetingYearBalancesFromAllTxs(
+    meetingId,
+    meeting.initialBalance
+  );
 }
 
 export async function createTransaction(

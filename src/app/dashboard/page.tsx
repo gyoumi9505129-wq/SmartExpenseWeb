@@ -27,7 +27,8 @@ export default function DashboardPage() {
     let cancelled = false;
     (async () => {
       try {
-        await ensureHanuriSharedViewerAccess(user.uid, user.email);
+        // 공용 계정만 보정. 일반/관리자는 즉시 no-op → 모임 조회로 바로 진행
+        void ensureHanuriSharedViewerAccess(user.uid, user.email);
         const meeting = await resolvePrimaryMeeting();
         if (cancelled) return;
         if (

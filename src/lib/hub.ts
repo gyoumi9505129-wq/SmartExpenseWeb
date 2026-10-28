@@ -128,11 +128,16 @@ export async function claimPendingEmailInvites(
  * 한우리 공용 계정: 승인 없이 sharedWith에 본인을 넣어 조회 권한을 확보.
  * Android ensureHanuriSharedViewerAccess / firestore.rules 와 동일.
  */
+/** 세션당 1회만 meetings 전체 스캔 (대시보드+모임 중복 방지) */
+const hanuriAccessDone = new Set<string>();
+
 export async function ensureHanuriSharedViewerAccess(
   uid: string,
   email: string | null | undefined
 ): Promise<number> {
   if (!isHanuriSharedViewer(email) || !uid) return 0;
+  const cacheKey = `${uid}:${String(email).toLowerCase()}`;
+  if (hanuriAccessDone.has(cacheKey)) return 0;
   const snap = await getDocs(collection(getFirebaseDb(), COLLECTIONS.MEETINGS));
   let granted = 0;
   for (const d of snap.docs) {
@@ -158,6 +163,7 @@ export async function ensureHanuriSharedViewerAccess(
       // rules 등으로 실패하면 건너뜀
     }
   }
+  hanuriAccessDone.add(cacheKey);
   return granted;
 }
 
