@@ -1,5 +1,10 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import {
+  browserSessionPersistence,
+  getAuth,
+  setPersistence,
+  type Auth,
+} from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 
 /**
@@ -29,6 +34,7 @@ const firebaseEnvConfig = {
 
 let app: FirebaseApp;
 let auth: Auth;
+let authPersistenceReady: Promise<Auth> | null = null;
 let db: Firestore;
 
 /** 사설 LAN IP (폰에서 http://192.168.x.x:3000 접속) */
@@ -74,6 +80,21 @@ export function getFirebaseAuth(): Auth {
     auth = getAuth(getFirebaseApp());
   }
   return auth;
+}
+
+/**
+ * 브라우저를 완전히 종료하면 로그인 세션이 끊기도록 SESSION persistence 적용.
+ * (탭만 닫는 경우·같은 브라우저 재사용 중에는 유지)
+ */
+export function ensureAuthPersistence(): Promise<Auth> {
+  const instance = getFirebaseAuth();
+  if (!authPersistenceReady) {
+    authPersistenceReady = setPersistence(
+      instance,
+      browserSessionPersistence
+    ).then(() => instance);
+  }
+  return authPersistenceReady;
 }
 
 export function getFirebaseDb(): Firestore {

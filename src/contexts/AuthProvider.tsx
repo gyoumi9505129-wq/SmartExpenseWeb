@@ -16,7 +16,7 @@ import {
   signOut,
   type User,
 } from "firebase/auth";
-import { getFirebaseAuth } from "@/lib/firebase";
+import { ensureAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
 import { syncUserProfileFromAuth } from "@/lib/userProfile";
 import { isSystemAdmin } from "@/lib/roles";
 import type { UserProfile } from "@/lib/types";
@@ -87,28 +87,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const watchdog = window.setTimeout(markReady, 2500);
 
-    try {
-      const auth = getFirebaseAuth();
-      unsub = onAuthStateChanged(auth, (next) => {
+    void (async () => {
+      try {
+        const auth = await ensureAuthPersistence();
         if (cancelled) return;
-        setUser(next);
+        unsub = onAuthStateChanged(auth, (next) => {
+          if (cancelled) return;
+          setUser(next);
+          window.clearTimeout(watchdog);
+          markReady();
+          if (!next) {
+            setProfile(null);
+            return;
+          }
+          syncProfile(next, isCancelled, setProfile);
+        });
+        if (cancelled) {
+          unsub();
+          unsub = () => {};
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(
+            e instanceof Error ? e.message : "Firebase 초기화에 실패했습니다."
+          );
+        }
         window.clearTimeout(watchdog);
         markReady();
-        if (!next) {
-          setProfile(null);
-          return;
-        }
-        syncProfile(next, isCancelled, setProfile);
-      });
-    } catch (e) {
-      if (!cancelled) {
-        setError(
-          e instanceof Error ? e.message : "Firebase 초기화에 실패했습니다."
-        );
       }
-      window.clearTimeout(watchdog);
-      markReady();
-    }
+    })();
 
     return () => {
       cancelled = true;
@@ -120,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogleIdToken = useCallback(async (idToken: string) => {
     setError(null);
     try {
+      await ensureAuthPersistence();
       const credential = GoogleAuthProvider.credential(idToken);
       const result = await signInWithCredential(getFirebaseAuth(), credential);
       // onAuthStateChanged에서도 동기화하지만, 로그인 직후 최신 이름으로 즉시 반영
