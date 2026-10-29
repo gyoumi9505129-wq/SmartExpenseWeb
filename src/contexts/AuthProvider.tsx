@@ -145,12 +145,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     setError(null);
-    await signOut(getFirebaseAuth());
-    setUser(null);
-    setProfile(null);
-    // 클라이언트 라우팅만 하면 배포 전 JS 번들이 메모리에 남아
-    // 이전 UI(설정 이력 리스트·관리 탭 누락 등)가 그대로 보일 수 있음 → 강제 새로고침
-    window.location.assign("/");
+    try {
+      await signOut(getFirebaseAuth());
+    } finally {
+      setUser(null);
+      setProfile(null);
+      // LOCAL 잔여분까지 정리 (이전 getAuth 기본 영속 대비)
+      try {
+        const remove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key?.startsWith("firebase:")) remove.push(key);
+        }
+        remove.forEach((key) => localStorage.removeItem(key));
+        for (let i = sessionStorage.length - 1; i >= 0; i--) {
+          const key = sessionStorage.key(i);
+          if (key?.startsWith("firebase:")) sessionStorage.removeItem(key);
+        }
+        indexedDB.deleteDatabase("firebaseLocalStorageDb");
+      } catch {
+        // ignore
+      }
+      // 클라이언트 라우팅만 하면 배포 전 JS 번들이 메모리에 남아
+      // 이전 UI(설정 이력 리스트·관리 탭 누락 등)가 그대로 보일 수 있음 → 강제 새로고침
+      window.location.assign("/");
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(

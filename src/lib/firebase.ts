@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import {
   browserSessionPersistence,
   getAuth,
+  initializeAuth,
   setPersistence,
   type Auth,
 } from "firebase/auth";
@@ -75,24 +76,66 @@ export function getFirebaseApp(): FirebaseApp {
   return app;
 }
 
+/** 예전에 LOCAL persistence 로 남은 Firebase 인증 저장소 제거 */
+function purgeLegacyLocalAuthStorage(): Promise<void> {
+  try {
+    const remove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith("firebase:")) remove.push(key);
+    }
+    remove.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // ignore
+  }
+
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.deleteDatabase("firebaseLocalStorageDb");
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+      req.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+/**
+ * SESSION persistence 만 사용.
+ * getAuth() 기본값(IndexedDB LOCAL)을 쓰면 브라우저를 닫아도 자동 로그인됨.
+ */
 export function getFirebaseAuth(): Auth {
   if (!auth) {
-    auth = getAuth(getFirebaseApp());
+    const firebaseApp = getFirebaseApp();
+    try {
+      auth = initializeAuth(firebaseApp, {
+        persistence: browserSessionPersistence,
+      });
+    } catch {
+      // HMR 등으로 이미 초기화된 경우
+      auth = getAuth(firebaseApp);
+    }
   }
   return auth;
 }
 
 /**
  * 브라우저를 완전히 종료하면 로그인 세션이 끊기도록 SESSION persistence 적용.
- * (탭만 닫는 경우·같은 브라우저 재사용 중에는 유지)
+ * (탭 새로고침·같은 탭 내 이동은 유지. Chrome '끊긴 위치에서 계속'은 OS/브라우저 설정에 따름)
  */
 export function ensureAuthPersistence(): Promise<Auth> {
-  const instance = getFirebaseAuth();
   if (!authPersistenceReady) {
-    authPersistenceReady = setPersistence(
-      instance,
-      browserSessionPersistence
-    ).then(() => instance);
+    authPersistenceReady = (async () => {
+      await purgeLegacyLocalAuthStorage();
+      const instance = getFirebaseAuth();
+      try {
+        await setPersistence(instance, browserSessionPersistence);
+      } catch {
+        // SESSION 미지원·이미 적용된 경우
+      }
+      return instance;
+    })();
   }
   return authPersistenceReady;
 }
