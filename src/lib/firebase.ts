@@ -4,9 +4,14 @@ import {
   getAuth,
   initializeAuth,
   setPersistence,
+  signOut,
   type Auth,
 } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import {
+  clearFirebaseAuthStorageSync,
+  shouldDiscardAuthSessionOnBoot,
+} from "@/lib/authSession";
 
 /**
  * Android SmartExpense 앱과 동일한 Firebase 프로젝트.
@@ -121,18 +126,30 @@ export function getFirebaseAuth(): Auth {
 }
 
 /**
- * 브라우저를 완전히 종료하면 로그인 세션이 끊기도록 SESSION persistence 적용.
- * (탭 새로고침·같은 탭 내 이동은 유지. Chrome '끊긴 위치에서 계속'은 OS/브라우저 설정에 따름)
+ * SESSION persistence + 브라우저 종료 가드.
+ * Chrome 이 sessionStorage 를 복원해도, 이전 종료 가드가 있으면 세션을 폐기한다.
  */
 export function ensureAuthPersistence(): Promise<Auth> {
   if (!authPersistenceReady) {
     authPersistenceReady = (async () => {
+      const discard = shouldDiscardAuthSessionOnBoot();
+      if (discard) {
+        clearFirebaseAuthStorageSync();
+      }
       await purgeLegacyLocalAuthStorage();
       const instance = getFirebaseAuth();
       try {
         await setPersistence(instance, browserSessionPersistence);
       } catch {
         // SESSION 미지원·이미 적용된 경우
+      }
+      if (discard) {
+        clearFirebaseAuthStorageSync();
+        try {
+          await signOut(instance);
+        } catch {
+          // ignore
+        }
       }
       return instance;
     })();

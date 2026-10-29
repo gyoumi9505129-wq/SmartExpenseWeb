@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/contexts/AuthProvider";
+import { prepareAuthHardNavigation } from "@/lib/authSession";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
@@ -10,6 +11,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) {
       // 로그인 직후 최신 HTML/JS를 받도록 soft navigate 대신 hard load
+      // (브라우저 종료 가드가 이 이동을 '종료'로 오인하지 않게 플래그 설정)
+      prepareAuthHardNavigation();
       window.location.replace("/dashboard/");
     }
   }, [loading, user]);
