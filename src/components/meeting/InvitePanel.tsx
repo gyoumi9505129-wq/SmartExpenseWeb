@@ -106,6 +106,7 @@ export function InvitePanel({ meetingId, myUid, canEdit }: Props) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         <input
+          lang="ko"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="이메일 또는 UID"

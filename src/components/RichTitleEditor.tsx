@@ -91,6 +91,7 @@ export function RichTitleEditor({
         ref={ref}
         role="textbox"
         aria-label={label}
+        lang="ko"
         contentEditable
         suppressContentEditableWarning
         data-placeholder={placeholder}

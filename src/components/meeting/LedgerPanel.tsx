@@ -479,6 +479,8 @@ export function LedgerPanel({
                   : "금액"}
               <input
                 type="number"
+                lang="en"
+                data-input-lang="numeric"
                 min={1}
                 max={
                   isRegularDues && selectedOpt
@@ -507,6 +509,7 @@ export function LedgerPanel({
               내용
               <input
                 type="text"
+                lang="ko"
                 value={form.description}
                 readOnly={isRegularDues}
                 onChange={(e) =>

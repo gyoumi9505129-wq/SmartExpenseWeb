@@ -140,6 +140,7 @@ export function MeetingHistoryDialog({
                 <label className="text-xs text-zinc-500">
                   내용 *
                   <input
+                    lang="ko"
                     value={histContent}
                     onChange={(e) => setHistContent(e.target.value)}
                     placeholder="내용"
@@ -149,6 +150,7 @@ export function MeetingHistoryDialog({
                 <label className="text-xs text-zinc-500">
                   상세
                   <input
+                    lang="ko"
                     value={histDetails}
                     onChange={(e) => setHistDetails(e.target.value)}
                     placeholder="상세"

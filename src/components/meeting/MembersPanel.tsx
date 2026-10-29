@@ -158,18 +158,25 @@ export function MembersPanel({
           <h3 className="text-sm font-semibold">회원 등록</h3>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <input
+              lang="ko"
               placeholder="이름 *"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
             />
             <input
+              type="tel"
+              lang="en"
+              data-input-lang="numeric"
+              inputMode="tel"
               placeholder="전화"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
             />
             <input
+              type="email"
+              lang="ko"
               placeholder="이메일"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

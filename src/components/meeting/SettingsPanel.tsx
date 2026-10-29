@@ -246,18 +246,24 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
           <h3 className="text-sm font-medium text-zinc-700">모임 계좌 관리</h3>
           <div className="grid gap-2 sm:grid-cols-3">
             <input
+              lang="ko"
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
               placeholder="은행 *"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
             />
             <input
+              lang="en"
+              data-input-lang="numeric"
+              inputMode="numeric"
+              autoComplete="off"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
               placeholder="계좌번호 *"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
             />
             <input
+              lang="ko"
               value={holderName}
               onChange={(e) => setHolderName(e.target.value)}
               placeholder="예금주"

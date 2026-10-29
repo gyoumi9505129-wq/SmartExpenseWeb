@@ -334,6 +334,8 @@ export function MemberDuesDetailDialog({
                           {mode === "PARTIAL" ? (
                             <input
                               type="number"
+                              lang="en"
+                              data-input-lang="numeric"
                               placeholder={`잔여 ${selectedRemain.toLocaleString("ko-KR")}원 이내`}
                               value={payAmount[row.id] || ""}
                               onChange={(e) =>
