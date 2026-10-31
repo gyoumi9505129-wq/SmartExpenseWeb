@@ -85,6 +85,7 @@ export async function listHistories(
         content: typeof data.content === "string" ? data.content : "",
         details: typeof data.details === "string" ? data.details : "",
         note: typeof data.note === "string" ? data.note : null,
+        isPublic: data.isPublic !== false,
       };
     })
     .sort((a, b) => a.date - b.date);
@@ -98,6 +99,7 @@ export async function upsertHistory(
     content: string;
     details: string;
     note?: string;
+    isPublic?: boolean;
   }
 ): Promise<string> {
   const content = input.content.trim();
@@ -111,6 +113,7 @@ export async function upsertHistory(
     content,
     details: input.details.trim(),
     note: input.note?.trim() || null,
+    isPublic: input.isPublic !== false,
   };
   if (input.id) {
     await setDoc(

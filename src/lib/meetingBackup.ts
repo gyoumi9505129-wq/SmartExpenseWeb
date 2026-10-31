@@ -36,6 +36,8 @@ export type ClubHistoryRow = {
   content: string;
   details: string;
   note: string | null;
+  /** 일반 회원에게 공개. 미설정(레거시)은 true로 간주 */
+  isPublic: boolean;
 };
 
 export type ClubAccountRow = {
@@ -100,6 +102,7 @@ async function fetchHistories(meetingId: string): Promise<ClubHistoryRow[]> {
       content: typeof data.content === "string" ? data.content : "",
       details: typeof data.details === "string" ? data.details : "",
       note: typeof data.note === "string" ? data.note : null,
+      isPublic: data.isPublic !== false,
     };
   });
 }
@@ -444,6 +447,7 @@ export async function restoreMeetingBackup(
         content: h.content,
         details: h.details,
         note: h.note,
+        isPublic: h.isPublic !== false,
       });
     };
   });

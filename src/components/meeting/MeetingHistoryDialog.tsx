@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { IsoDateField } from "@/components/IsoDateField";
 import type { ClubHistoryRow } from "@/lib/meetingBackup";
 import { normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
@@ -15,7 +15,7 @@ type Props = {
   meetingId: string;
   onClose: () => void;
   onChanged?: () => Promise<void>;
-  /** true면 조회만 (일반 회원) */
+  /** true면 조회만 (일반 회원) — 공개 이력만 표시 */
   readOnly?: boolean;
 };
 
@@ -30,6 +30,7 @@ export function MeetingHistoryDialog({
   const [histDate, setHistDate] = useState(todayIsoDate());
   const [histContent, setHistContent] = useState("");
   const [histDetails, setHistDetails] = useState("");
+  const [histIsPublic, setHistIsPublic] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -45,11 +46,17 @@ export function MeetingHistoryDialog({
     );
   }, [reload]);
 
+  const visibleHistories = useMemo(
+    () => (readOnly ? histories.filter((h) => h.isPublic) : histories),
+    [histories, readOnly]
+  );
+
   function resetForm() {
     setEditingId(null);
     setHistDate(todayIsoDate());
     setHistContent("");
     setHistDetails("");
+    setHistIsPublic(true);
   }
 
   function startEdit(row: ClubHistoryRow) {
@@ -60,6 +67,7 @@ export function MeetingHistoryDialog({
     setHistDate(historyDateToIso(row.date) || todayIsoDate());
     setHistContent(row.content || "");
     setHistDetails(row.details || "");
+    setHistIsPublic(row.isPublic !== false);
   }
 
   async function run(action: () => Promise<void>, okMessage: string) {
@@ -77,6 +85,8 @@ export function MeetingHistoryDialog({
       setBusy(false);
     }
   }
+
+  const colCount = readOnly ? 3 : 5;
 
   return (
     <div
@@ -158,6 +168,16 @@ export function MeetingHistoryDialog({
                   />
                 </label>
               </div>
+              <label className="inline-flex items-center gap-2 text-sm text-zinc-700">
+                <input
+                  type="checkbox"
+                  checked={histIsPublic}
+                  disabled={busy}
+                  onChange={(e) => setHistIsPublic(e.target.checked)}
+                  className="size-4 rounded border-zinc-300 text-emerald-600"
+                />
+                이력 공개 (일반 회원에게 표시)
+              </label>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -177,6 +197,7 @@ export function MeetingHistoryDialog({
                         dateIso,
                         content: histContent,
                         details: histDetails,
+                        isPublic: histIsPublic,
                       });
                       resetForm();
                     }, isEdit ? "이력을 수정했습니다." : "이력을 추가했습니다.");
@@ -211,6 +232,9 @@ export function MeetingHistoryDialog({
                   <th className="px-3 py-2">내용</th>
                   <th className="px-3 py-2">상세</th>
                   {!readOnly ? (
+                    <th className="whitespace-nowrap px-3 py-2">공개</th>
+                  ) : null}
+                  {!readOnly ? (
                     <th className="w-24 whitespace-nowrap px-3 py-2 text-right">
                       {" "}
                     </th>
@@ -218,7 +242,7 @@ export function MeetingHistoryDialog({
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {histories.map((h) => (
+                {visibleHistories.map((h) => (
                   <tr
                     key={h.id}
                     className={`align-top text-zinc-800 ${
@@ -232,6 +256,15 @@ export function MeetingHistoryDialog({
                     <td className="px-3 py-2 text-zinc-600">
                       {h.details || "—"}
                     </td>
+                    {!readOnly ? (
+                      <td className="whitespace-nowrap px-3 py-2 text-xs">
+                        {h.isPublic ? (
+                          <span className="text-emerald-700">공개</span>
+                        ) : (
+                          <span className="text-zinc-400">비공개</span>
+                        )}
+                      </td>
+                    ) : null}
                     {!readOnly ? (
                       <td className="whitespace-nowrap px-3 py-2 text-right">
                         <div className="inline-flex gap-2">
@@ -262,10 +295,10 @@ export function MeetingHistoryDialog({
                     ) : null}
                   </tr>
                 ))}
-                {histories.length === 0 ? (
+                {visibleHistories.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={readOnly ? 3 : 4}
+                      colSpan={colCount}
                       className="px-3 py-4 text-xs text-zinc-400"
                     >
                       이력이 없습니다.

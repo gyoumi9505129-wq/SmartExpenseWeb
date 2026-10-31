@@ -25,7 +25,7 @@ export function ClubManagePanel({ meetingId }: Props) {
         listHistories(meetingId),
         listAccounts(meetingId),
       ]);
-      setHistoryCount(h.length);
+      setHistoryCount(h.filter((row) => row.isPublic).length);
       setAccounts(a);
     } catch (e) {
       setError(
