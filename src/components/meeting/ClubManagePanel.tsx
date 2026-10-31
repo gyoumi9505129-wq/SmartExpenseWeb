@@ -43,7 +43,7 @@ export function ClubManagePanel({ meetingId }: Props) {
   return (
     <div className="mt-6 space-y-6">
       <p className="text-xs text-zinc-500">
-        모임 이력과 계좌 정보를 조회할 수 있습니다. (수정은 시스템관리자 설정에서
+        모임 이력과 계좌 정보를 조회할 수 있습니다. (수정은 한우리 관리자 설정에서
         가능)
       </p>
 

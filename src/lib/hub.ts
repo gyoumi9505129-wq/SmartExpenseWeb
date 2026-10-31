@@ -14,7 +14,7 @@ import {
 import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import { isPrimaryMeetingName } from "./primaryMeeting";
-import { isHanuriSharedViewer } from "./roles";
+import { isSystemAdmin } from "./roles";
 import type { DirectoryMeeting, JoinRequest, Meeting, UserProfile } from "./types";
 import { mapMeeting } from "./meetings";
 
@@ -125,46 +125,56 @@ export async function claimPendingEmailInvites(
 }
 
 /**
- * 한우리 공용 계정: 승인 없이 sharedWith에 본인을 넣어 조회 권한을 확보.
- * Android ensureHanuriSharedViewerAccess / firestore.rules 와 동일.
+ * 한우리 관리자: 한우리 모임의 ownerUid 를 본인으로 맞춤.
+ * Android ensureHanuriAdminOwnership 과 동일.
  */
 /** 세션당 1회만 meetings 전체 스캔 (대시보드+모임 중복 방지) */
-const hanuriAccessDone = new Set<string>();
+const hanuriOwnershipDone = new Set<string>();
 
-export async function ensureHanuriSharedViewerAccess(
+export async function ensureHanuriAdminOwnership(
   uid: string,
   email: string | null | undefined
 ): Promise<number> {
-  if (!isHanuriSharedViewer(email) || !uid) return 0;
+  if (!isSystemAdmin(email) || !uid) return 0;
   const cacheKey = `${uid}:${String(email).toLowerCase()}`;
-  if (hanuriAccessDone.has(cacheKey)) return 0;
+  if (hanuriOwnershipDone.has(cacheKey)) return 0;
   const snap = await getDocs(collection(getFirebaseDb(), COLLECTIONS.MEETINGS));
-  let granted = 0;
+  let updated = 0;
   for (const d of snap.docs) {
     const name = asString(d.data().name);
     if (!isPrimaryMeetingName(name)) continue;
-    const shared = Array.isArray(d.data().sharedWith)
-      ? (d.data().sharedWith as unknown[]).filter(
-          (x): x is string => typeof x === "string"
-        )
-      : [];
-    if (shared.includes(uid)) {
-      granted += 1;
+    const ownerUid = asString(d.data().ownerUid);
+    if (ownerUid === uid) {
+      updated += 1;
       continue;
     }
     try {
       await updateDoc(d.ref, {
+        ownerUid: uid,
         sharedWith: arrayUnion(uid),
         inactiveMemberUids: arrayRemove(uid),
         [`inactiveMemberReasons.${uid}`]: deleteField(),
       });
-      granted += 1;
+      try {
+        await setDoc(
+          doc(getFirebaseDb(), COLLECTIONS.MEETING_DIRECTORY, d.id),
+          {
+            ownerUid: uid,
+            name,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      } catch {
+        // directory 동기화 실패는 무시
+      }
+      updated += 1;
     } catch {
       // rules 등으로 실패하면 건너뜀
     }
   }
-  hanuriAccessDone.add(cacheKey);
-  return granted;
+  hanuriOwnershipDone.add(cacheKey);
+  return updated;
 }
 
 export async function submitJoinRequest(params: {

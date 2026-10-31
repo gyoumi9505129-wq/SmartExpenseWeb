@@ -106,7 +106,7 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
   return (
     <div className="mt-6 space-y-8">
       <p className="text-xs text-amber-700">
-        시스템관리자 전용입니다. 백업·초기화·복원은 클라우드(Firestore) 데이터를
+        한우리 관리자 전용입니다. 백업·초기화·복원은 클라우드(Firestore) 데이터를
         직접 변경합니다. 모임 문서(개설자·승인 회원 목록)는 유지됩니다.
       </p>
 

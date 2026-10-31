@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthProvider";
 import { resolvePrimaryMeeting } from "@/lib/access";
-import { ensureHanuriSharedViewerAccess } from "@/lib/hub";
+import { ensureHanuriAdminOwnership } from "@/lib/hub";
 import { canAccessMeeting } from "@/lib/roles";
 import { SAMPLE_MEETING_ID } from "@/lib/sampleData";
 
 /**
  * 로그인 후 단일 모임으로 진입.
- * - 관리자·승인 회원·한우리 공용 → 실데이터
+ * - 한우리 관리자·승인 회원 → 실데이터
  * - 미승인 일반회원 → 샘플 화면
  */
 export default function DashboardPage() {
@@ -27,8 +27,7 @@ export default function DashboardPage() {
     let cancelled = false;
     (async () => {
       try {
-        // 공용 계정만 보정. 일반/관리자는 즉시 no-op → 모임 조회로 바로 진행
-        void ensureHanuriSharedViewerAccess(user.uid, user.email);
+        void ensureHanuriAdminOwnership(user.uid, user.email);
         const meeting = await resolvePrimaryMeeting();
         if (cancelled) return;
         if (

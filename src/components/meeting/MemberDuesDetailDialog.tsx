@@ -121,7 +121,7 @@ export function MemberDuesDetailDialog({
                 <p className="mt-1 text-sm text-zinc-500">
                   {canEdit
                     ? "연도별 내역을 확인하고 미납 회차를 납부 처리할 수 있습니다."
-                    : "조회만 가능합니다. (수정은 모임관리자·시스템관리자만 가능)"}
+                    : "조회만 가능합니다. (수정은 모임관리자·한우리 관리자만 가능)"}
                 </p>
               </div>
               <button

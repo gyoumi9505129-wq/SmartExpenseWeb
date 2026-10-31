@@ -26,7 +26,7 @@ import {
   requestAccess,
   resolvePrimaryMeeting,
 } from "@/lib/access";
-import { ensureHanuriSharedViewerAccess } from "@/lib/hub";
+import { ensureHanuriAdminOwnership } from "@/lib/hub";
 import { FIRST_LEDGER_YEAR } from "@/lib/balance";
 import { currentSystemYear } from "@/lib/duesSync";
 import { fetchDues } from "@/lib/dues";
@@ -41,7 +41,6 @@ import {
 import {
   canAccessMeeting,
   canEditMeeting,
-  isHanuriSharedViewer,
   resolveRole,
 } from "@/lib/roles";
 import {
@@ -112,8 +111,7 @@ function MeetingDetailInner() {
     setBusy(true);
     setError(null);
     try {
-      // 공용 계정만 권한 보정 (일반/관리자는 즉시 return)
-      void ensureHanuriSharedViewerAccess(user.uid, user.email);
+      void ensureHanuriAdminOwnership(user.uid, user.email);
 
       if (isSample) {
         let primary = realIdHint
@@ -427,7 +425,7 @@ function MeetingDetailInner() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {isSample && !isHanuriSharedViewer(user.email) ? (
+            {isSample ? (
               <button
                 type="button"
                 disabled={actionBusy || pendingRequest || !realMeeting}
