@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   deleteDuesInstallment,
-  syncOrphanLedgersForDuesRecord,
+  reconcileDuesHistoryWithLedger,
 } from "@/lib/dues";
 import { formatWon } from "@/lib/format";
 import type { DuesDetail, DuesRecord } from "@/lib/types";
@@ -76,14 +76,16 @@ export function DuesPaymentHistoryDialog({
   const [error, setError] = useState<string | null>(null);
   const [localRow, setLocalRow] = useState(row);
 
-  // 이미 삭제된 분납에 남은 고아 장부 수입 정리 (진입 시 1회)
+  // 진입 시 1회: 장부 기준으로 분납 복구(일자 불일치·고아 분납 정리)
   useEffect(() => {
     if (!canEdit) return;
     let cancelled = false;
     (async () => {
       try {
-        await syncOrphanLedgersForDuesRecord(meetingId, row);
-        if (!cancelled) await onChanged();
+        const repaired = await reconcileDuesHistoryWithLedger(meetingId, row);
+        if (cancelled) return;
+        setLocalRow(repaired);
+        await onChanged();
       } catch {
         // 보정 실패해도 이력 조회는 유지
       }

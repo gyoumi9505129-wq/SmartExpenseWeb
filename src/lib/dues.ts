@@ -18,6 +18,7 @@ import {
 import { createTransaction, deleteTransaction, deleteTransactionById, type LedgerInput } from "./ledger";
 import {
   fetchTransactionById,
+  fetchTransactions,
   fetchTransactionsForYear,
 } from "./meetings";
 import { COLLECTIONS } from "./paths";
@@ -720,6 +721,160 @@ export async function syncOrphanLedgersForDuesRecord(
       remainingPayments: detail.payments.filter((p) => p.amount > 0),
     });
   }
+}
+
+/**
+ * 장부를 기준으로 분납 이력을 복구한다.
+ * - 장부에만 있는 납부 → 분납에 추가
+ * - 분납에만 있고 장부에 없는 일자(예: 10-29) → 제거
+ * - 링크는 있는데 장부 일자가 바뀐 경우(예: 10-29→09-21) → 장부 일자로 맞춤
+ */
+export async function recoverDuesPaymentsFromLedger(
+  meetingId: string,
+  dues: DuesRecord
+): Promise<DuesRecord> {
+  const allTx = await fetchTransactions(meetingId);
+  const regularIncome = allTx.filter(
+    (t) => (t.incomeAmount || 0) > 0 && isRegularDuesIncome(t)
+  );
+
+  let changed = false;
+  const nextDetails = dues.details.map((detail) => {
+    if (detail.isExcluded) return detail;
+
+    const expectedNote = buildDuesPaymentNote(
+      dues.memberName,
+      dues.year,
+      detail.termLabel
+    );
+    const ledgers = regularIncome
+      .filter((t) =>
+        t.linkedDuesDetailId === detail.id ||
+        isDuesLedgerCandidate(t, {
+          expectedNote,
+          memberName: dues.memberName,
+          memberId: dues.memberId,
+          year: dues.year,
+          termLabel: detail.termLabel,
+        })
+      )
+      .sort(
+        (a, b) =>
+          a.date.localeCompare(b.date) || a.id.localeCompare(b.id)
+      );
+
+    const fromLedger: DuesPayment[] = ledgers.map((t) => ({
+      payDate: t.date,
+      amount: t.incomeAmount || 0,
+      linkedTransactionId: t.id,
+    }));
+
+    const existingSorted = [...detail.payments]
+      .filter((p) => p.amount > 0)
+      .sort(
+        (a, b) =>
+          a.payDate.localeCompare(b.payDate) ||
+          a.amount - b.amount ||
+          (a.linkedTransactionId || "").localeCompare(b.linkedTransactionId || "")
+      );
+    const samePayments =
+      fromLedger.length === existingSorted.length &&
+      fromLedger.every((p, i) => {
+        const cur = existingSorted[i];
+        return (
+          cur &&
+          cur.payDate === p.payDate &&
+          cur.amount === p.amount &&
+          (cur.linkedTransactionId || null) === p.linkedTransactionId
+        );
+      });
+
+    const paid = fromLedger.reduce((s, p) => s + p.amount, 0);
+    const payDate =
+      fromLedger
+        .filter((p) => p.amount > 0 && p.payDate)
+        .map((p) => p.payDate)
+        .sort()
+        .at(-1) || "";
+    const isPaid =
+      !detail.isExcluded && detail.amount > 0 && paid >= detail.amount;
+
+    if (
+      samePayments &&
+      detail.paidAmount === paid &&
+      detail.payDate === payDate &&
+      detail.isPaid === isPaid
+    ) {
+      return detail;
+    }
+
+    changed = true;
+    return {
+      ...detail,
+      payments: fromLedger,
+      paidAmount: paid,
+      payDate,
+      isPaid,
+    };
+  });
+
+  // 링크 누락 장부는 회차에 다시 연결 (분납 복구와 함께)
+  const linkFixes: Promise<void>[] = [];
+  for (const detail of nextDetails) {
+    if (detail.isExcluded) continue;
+    for (const p of detail.payments) {
+      const txId = p.linkedTransactionId;
+      if (!txId) continue;
+      const tx = regularIncome.find((t) => t.id === txId);
+      if (tx && tx.linkedDuesDetailId !== detail.id) {
+        linkFixes.push(
+          updateDoc(
+            doc(
+              getFirebaseDb(),
+              COLLECTIONS.MEETINGS,
+              meetingId,
+              COLLECTIONS.TRANSACTIONS,
+              txId
+            ),
+            { linkedDuesDetailId: detail.id }
+          ).then(() => undefined)
+        );
+      }
+    }
+  }
+  if (linkFixes.length > 0) {
+    await Promise.allSettled(linkFixes);
+  }
+
+  if (!changed) return dues;
+  await writeDuesDoc(meetingId, dues, nextDetails);
+  return {
+    ...dues,
+    details: nextDetails,
+    paidAmount: nextDetails.reduce((s, d) => s + (d.isExcluded ? 0 : d.paidAmount), 0),
+  };
+}
+
+function isRegularDuesIncome(t: Transaction): boolean {
+  const cat = (t.category || "").trim();
+  const desc = (t.description || t.note || "").trim();
+  return (
+    cat.includes("정기 회비") ||
+    cat === REGULAR_DUES_CATEGORY ||
+    desc.includes("회비 납부")
+  );
+}
+
+/**
+ * 이력 화면 진입: 장부→분납 복구 후, 분납에 없는 고아 장부만 정리.
+ */
+export async function reconcileDuesHistoryWithLedger(
+  meetingId: string,
+  dues: DuesRecord
+): Promise<DuesRecord> {
+  const recovered = await recoverDuesPaymentsFromLedger(meetingId, dues);
+  await syncOrphanLedgersForDuesRecord(meetingId, recovered);
+  return recovered;
 }
 
 /** 회비 회차에 남아 있지 않은 장부 수입(고아)을 제거 */
