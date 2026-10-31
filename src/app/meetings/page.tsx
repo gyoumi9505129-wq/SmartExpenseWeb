@@ -286,9 +286,13 @@ function MeetingDetailInner() {
     return base;
   }, [canManageAccounts, isSample, pendingApprovalCount]);
 
-  const selectTab = useCallback((next: Tab) => {
-    setTab(next);
-  }, []);
+  const selectTab = useCallback(
+    (next: Tab) => {
+      setTab(next);
+      void reload();
+    },
+    [reload]
+  );
 
   const ledgerYearOptions = useMemo(() => {
     const now = currentSystemYear();
@@ -463,6 +467,14 @@ function MeetingDetailInner() {
                     : "승인 요청"}
               </button>
             ) : null}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void reload()}
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50"
+            >
+              {busy ? "새로고침…" : "새로고침"}
+            </button>
             <button
               type="button"
               onClick={() => logout()}
