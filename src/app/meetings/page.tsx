@@ -572,6 +572,7 @@ function MeetingDetailInner() {
               <DuesPanel
                 key={`dues-${meeting?.duesPaymentMethod || "HALF_YEARLY"}-${dues.length}`}
                 meetingId={isSample ? SAMPLE_MEETING_ID : meetingIdParam}
+                clubName={meeting?.name || "모임"}
                 dues={dues}
                 members={members}
                 canEdit={canEdit}

@@ -9,6 +9,7 @@ import {
 import { MemberDuesDetailDialog } from "@/components/meeting/MemberDuesDetailDialog";
 import { YearSelect } from "@/components/YearSelect";
 import { IsoDateField } from "@/components/IsoDateField";
+import { UnpaidNoticeDialog } from "@/components/meeting/UnpaidNoticeDialog";
 import {
   createOrUpdateDues,
   distributeDuesAmounts,
@@ -20,11 +21,14 @@ import {
 } from "@/lib/dues";
 import { duesYearOptions } from "@/lib/duesSync";
 import { formatWon, normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
+import type { ClubAccountRow } from "@/lib/meetingBackup";
+import { listAccounts } from "@/lib/meetingSettings";
 import { buildMemberDuesSummaries } from "@/lib/memberDuesSummary";
 import type { DuesRecord, Member } from "@/lib/types";
 
 type Props = {
   meetingId: string;
+  clubName?: string;
   dues: DuesRecord[];
   members: Member[];
   canEdit: boolean;
@@ -109,6 +113,7 @@ function findExistingDues(
 
 export function DuesPanel({
   meetingId,
+  clubName,
   dues,
   members,
   canEdit,
@@ -143,6 +148,23 @@ export function DuesPanel({
   );
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [ledgerRepairDone, setLedgerRepairDone] = useState(false);
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  const [accounts, setAccounts] = useState<ClubAccountRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = await listAccounts(meetingId);
+        if (!cancelled) setAccounts(rows);
+      } catch {
+        if (!cancelled) setAccounts([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [meetingId, noticeOpen]);
 
   // 관리자: 시드 비고(22년_상반기) 등 장부→분납 일괄 복구 (1회)
   useEffect(() => {
@@ -463,15 +485,24 @@ export function DuesPanel({
             {memberSummaries.length.toLocaleString("ko-KR")}명
           </p>
         </div>
-        {canEdit ? (
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setCreateOpen((v) => !v)}
-            className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
+            onClick={() => setNoticeOpen(true)}
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
           >
-            + 회비 등록
+            미납 안내 공유
           </button>
-        ) : null}
+          {canEdit ? (
+            <button
+              type="button"
+              onClick={() => setCreateOpen((v) => !v)}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
+            >
+              + 회비 등록
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <p
@@ -814,6 +845,15 @@ export function DuesPanel({
           onChanged={async () => {
             await onChanged();
           }}
+        />
+      ) : null}
+
+      {noticeOpen ? (
+        <UnpaidNoticeDialog
+          clubName={clubName}
+          summaries={memberSummaries}
+          accounts={accounts}
+          onClose={() => setNoticeOpen(false)}
         />
       ) : null}
     </div>
