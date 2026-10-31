@@ -12,8 +12,14 @@ import {
   listUnpaidOptionsForMember,
   saveLedgerWithDuesPayment,
   unpaidOptionLabel,
+  updateLedgerDuesPayment,
 } from "@/lib/dues";
 import { REGULAR_DUES_CATEGORY, buildDuesPaymentNote } from "@/lib/duesSync";
+import {
+  EVENT_SUB_CATEGORIES,
+  isCondolenceCategory,
+  syncEventExpenseFromLedger,
+} from "@/lib/eventExpenses";
 import { IsoDateField } from "@/components/IsoDateField";
 import { formatWon, normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
 import { createTransaction, updateTransaction } from "@/lib/ledger";
@@ -40,6 +46,7 @@ type FormState = {
   amount: string;
   memberId: string;
   duesDetailId: string;
+  eventSubCategory: string;
   /** 정기 회비 납부 방식 — 앱 DuesLedgerPaymentMode 와 동일 */
   paymentMode: "FULL" | "PARTIAL";
 };
@@ -52,6 +59,7 @@ const emptyForm = (): FormState => ({
   amount: "",
   memberId: "",
   duesDetailId: "",
+  eventSubCategory: "기타",
   paymentMode: "FULL",
 });
 
@@ -83,8 +91,19 @@ export function LedgerPanel({
   );
 
   const cats = useMemo(() => categoriesFor(form.type), [form.type]);
-  const isRegularDues =
-    form.type === "INCOME" && form.category === REGULAR_DUES_CATEGORY && !editing;
+  /** 신규 정기 회비 납부(분납 생성) */
+  const isRegularDuesCreate =
+    !editing &&
+    form.type === "INCOME" &&
+    form.category === REGULAR_DUES_CATEGORY;
+  /** 기존 정기 회비 장부 수정(분납 동기화) */
+  const isRegularDuesEdit = Boolean(
+    editing &&
+      (editing.category === REGULAR_DUES_CATEGORY ||
+        editing.linkedDuesDetailId)
+  );
+  const isCondolence = isCondolenceCategory(form.category);
+  const isRegularDues = isRegularDuesCreate;
 
   const activeMembers = useMemo(
     () => members.filter((m) => m.status === "ACTIVE"),
@@ -146,6 +165,7 @@ export function LedgerPanel({
       amount: String(row.amount || row.incomeAmount || row.expenseAmount || ""),
       memberId: row.memberId || "",
       duesDetailId: row.linkedDuesDetailId || "",
+      eventSubCategory: "기타",
       paymentMode: "FULL",
     });
     setError(null);
@@ -197,7 +217,7 @@ export function LedgerPanel({
       setError("금액을 확인해 주세요.");
       return;
     }
-    if (isRegularDues) {
+    if (isRegularDuesCreate) {
       if (!form.memberId) {
         setError("회원을 선택해 주세요.");
         return;
@@ -234,10 +254,24 @@ export function LedgerPanel({
         return;
       }
     }
+    if (isCondolence && !form.memberId) {
+      setError("경조사 대상 회원을 선택해 주세요.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      if (isRegularDues) {
+      if (isRegularDuesEdit && editing) {
+        const member = members.find((m) => m.id === (editing.memberId || ""));
+        await updateLedgerDuesPayment({
+          meetingId,
+          duesList: dues,
+          previous: editing,
+          amount,
+          date: dateIso,
+          memberName: member?.name || "",
+        });
+      } else if (isRegularDuesCreate) {
         const member = members.find((m) => m.id === form.memberId);
         await saveLedgerWithDuesPayment({
           meetingId,
@@ -258,8 +292,25 @@ export function LedgerPanel({
           memberId: form.memberId || null,
           linkedDuesDetailId: form.duesDetailId || null,
         };
-        if (editing) await updateTransaction(meetingId, editing, input);
-        else await createTransaction(meetingId, input);
+        let txId = editing?.id || "";
+        if (editing) {
+          await updateTransaction(meetingId, editing, input);
+          txId = editing.id;
+        } else {
+          txId = await createTransaction(meetingId, input);
+        }
+        // 경조사비 → eventExpenses 실시간 동기화
+        if (isCondolence && form.memberId && txId) {
+          await syncEventExpenseFromLedger({
+            meetingId,
+            transactionId: txId,
+            memberId: form.memberId,
+            date: dateIso,
+            amount,
+            note: form.description.trim(),
+            eventSubCategory: form.eventSubCategory || "기타",
+          });
+        }
       }
       setOpen(false);
       await onChanged();
@@ -271,7 +322,11 @@ export function LedgerPanel({
   }
 
   async function remove(row: Transaction) {
-    if (!confirm("이 장부 내역을 삭제할까요? 연결된 회비 납부도 함께 되돌립니다."))
+    if (
+      !confirm(
+        "이 장부 내역을 삭제할까요? 연결된 회비 분납·경조 내역도 함께 되돌립니다."
+      )
+    )
       return;
     setBusy(true);
     setError(null);
@@ -351,6 +406,7 @@ export function LedgerPanel({
                     category: categoriesFor(type)[0],
                     memberId: "",
                     duesDetailId: "",
+                    eventSubCategory: "기타",
                     description: "",
                     amount: "",
                     paymentMode: "FULL",
@@ -372,6 +428,7 @@ export function LedgerPanel({
                     category: e.target.value,
                     memberId: "",
                     duesDetailId: "",
+                    eventSubCategory: "기타",
                     description:
                       e.target.value === REGULAR_DUES_CATEGORY
                         ? ""
@@ -388,7 +445,7 @@ export function LedgerPanel({
               </select>
             </label>
 
-            {isRegularDues ? (
+            {isRegularDuesCreate ? (
               <>
                 <label className="text-xs text-zinc-500">
                   회원
@@ -466,6 +523,57 @@ export function LedgerPanel({
                         : "회원과 납부 대상 월/기수를 선택하면 잔여 전액이 자동 입력됩니다. 일부만 내려면 부분 납부를 선택하세요."}
                   </p>
                 </div>
+              </>
+            ) : null}
+
+            {isRegularDuesEdit ? (
+              <p className="sm:col-span-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                정기 회비 장부입니다. 일자·금액 변경 시 회비 분납 이력에 바로
+                반영됩니다.
+              </p>
+            ) : null}
+
+            {isCondolence && !isRegularDuesEdit ? (
+              <>
+                <label className="text-xs text-zinc-500">
+                  경조 대상 회원
+                  <select
+                    value={form.memberId}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, memberId: e.target.value }))
+                    }
+                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">선택</option>
+                    {activeMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs text-zinc-500">
+                  경조 종류
+                  <select
+                    value={form.eventSubCategory}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        eventSubCategory: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  >
+                    {EVENT_SUB_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="sm:col-span-2 text-xs text-zinc-500">
+                  저장 시 경조 탭(`eventExpenses`)과 실시간 동기화됩니다.
+                </p>
               </>
             ) : null}
 

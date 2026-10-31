@@ -1,7 +1,31 @@
-import { collection, getDocs } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import type { EventExpense, Member, Transaction } from "./types";
+
+/** 앱 EventSubCategory.all 과 동일 */
+export const EVENT_SUB_CATEGORIES = [
+  "본인 결혼",
+  "자녀 결혼",
+  "부모 회갑/고희",
+  "출산",
+  "자녀 돌",
+  "부모상",
+  "본인상",
+  "배우자상",
+  "기타",
+] as const;
+
+export const CONDOLENCE_CATEGORY = "경조사비 (회원 화환, 축의금/조의금 등)";
 
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
@@ -11,7 +35,9 @@ function asNumber(v: unknown): number {
   return typeof v === "number" && Number.isFinite(v) ? v : 0;
 }
 
-export function isCondolenceCategory(category: string | null | undefined): boolean {
+export function isCondolenceCategory(
+  category: string | null | undefined
+): boolean {
   if (!category) return false;
   const c = category.trim();
   return (
@@ -45,6 +71,108 @@ export async function fetchEventExpenses(
       isSeedOnly: data.isSeedOnly === true,
     } satisfies EventExpense;
   });
+}
+
+async function findEventExpenseByTransactionId(
+  meetingId: string,
+  transactionId: string
+): Promise<{ id: string } | null> {
+  if (!transactionId) return null;
+  const snap = await getDocs(
+    query(
+      collection(
+        getFirebaseDb(),
+        COLLECTIONS.MEETINGS,
+        meetingId,
+        COLLECTIONS.EVENT_EXPENSES
+      ),
+      where("linkedTransactionId", "==", transactionId)
+    )
+  );
+  const d = snap.docs[0];
+  return d ? { id: d.id } : null;
+}
+
+/**
+ * 장부 경조사비 지출 ↔ eventExpenses 실시간 동기화 (앱 EventExpenseRepository.syncFromLedgerTransaction)
+ */
+export async function syncEventExpenseFromLedger(params: {
+  meetingId: string;
+  transactionId: string;
+  memberId: string;
+  date: string;
+  amount: number;
+  note: string;
+  eventSubCategory?: string;
+}): Promise<void> {
+  const {
+    meetingId,
+    transactionId,
+    memberId,
+    date,
+    amount,
+    note,
+    eventSubCategory = "기타",
+  } = params;
+  if (!memberId || amount <= 0 || !transactionId) return;
+
+  const existing = await findEventExpenseByTransactionId(
+    meetingId,
+    transactionId
+  );
+  const payload = {
+    memberId,
+    date,
+    eventSubCategory: eventSubCategory.trim() || "기타",
+    amount: Math.floor(amount),
+    note: note || "",
+    linkedTransactionId: transactionId,
+    isSeedOnly: false,
+  };
+
+  if (existing) {
+    await updateDoc(
+      doc(
+        getFirebaseDb(),
+        COLLECTIONS.MEETINGS,
+        meetingId,
+        COLLECTIONS.EVENT_EXPENSES,
+        existing.id
+      ),
+      payload
+    );
+  } else {
+    await addDoc(
+      collection(
+        getFirebaseDb(),
+        COLLECTIONS.MEETINGS,
+        meetingId,
+        COLLECTIONS.EVENT_EXPENSES
+      ),
+      payload
+    );
+  }
+}
+
+/** 장부 삭제 시 연결 경조 도메인 행 제거 */
+export async function deleteEventExpenseByTransactionId(
+  meetingId: string,
+  transactionId: string
+): Promise<void> {
+  const existing = await findEventExpenseByTransactionId(
+    meetingId,
+    transactionId
+  );
+  if (!existing) return;
+  await deleteDoc(
+    doc(
+      getFirebaseDb(),
+      COLLECTIONS.MEETINGS,
+      meetingId,
+      COLLECTIONS.EVENT_EXPENSES,
+      existing.id
+    )
+  );
 }
 
 /**

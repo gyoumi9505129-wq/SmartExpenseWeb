@@ -16,7 +16,14 @@ import {
   noteMatchesMemberTerm,
   REGULAR_DUES_CATEGORY,
 } from "./duesSync";
-import { createTransaction, deleteTransaction, deleteTransactionById, type LedgerInput } from "./ledger";
+import { deleteEventExpenseByTransactionId } from "./eventExpenses";
+import {
+  createTransaction,
+  deleteTransaction,
+  deleteTransactionById,
+  updateTransaction,
+  type LedgerInput,
+} from "./ledger";
 import {
   fetchTransactionById,
   fetchTransactions,
@@ -1099,6 +1106,131 @@ export async function recordDuesPayment(params: {
   });
 }
 
+/**
+ * 기존 장부 정기 회비 수입 수정 → 연결된 분납 일자·금액 동기화.
+ * (신규 등록은 saveLedgerWithDuesPayment 사용)
+ */
+export async function updateLedgerDuesPayment(params: {
+  meetingId: string;
+  duesList: DuesRecord[];
+  previous: Transaction;
+  amount: number;
+  date: string;
+  memberName?: string;
+}): Promise<void> {
+  const { meetingId, duesList, previous, amount, date } = params;
+  if (amount <= 0) throw new Error("금액은 0보다 커야 합니다.");
+
+  let targetDues: DuesRecord | null = null;
+  let targetDetailId = previous.linkedDuesDetailId || "";
+  let paymentIndex = -1;
+  let oldAmount = 0;
+
+  for (const dues of duesList) {
+    for (const detail of dues.details) {
+      const idx = detail.payments.findIndex(
+        (p) => p.linkedTransactionId === previous.id
+      );
+      if (idx >= 0) {
+        targetDues = dues;
+        targetDetailId = detail.id;
+        paymentIndex = idx;
+        oldAmount = detail.payments[idx]!.amount;
+        break;
+      }
+    }
+    if (targetDues) break;
+  }
+
+  if (!targetDues || !targetDetailId || paymentIndex < 0) {
+    // 링크 누락 레거시: 회차 ID + 일자·금액으로 추정
+    if (previous.linkedDuesDetailId) {
+      for (const dues of duesList) {
+        const detail = dues.details.find(
+          (d) => d.id === previous.linkedDuesDetailId
+        );
+        if (!detail) continue;
+        const idx = detail.payments.findIndex(
+          (p) =>
+            p.payDate === previous.date &&
+            p.amount === (previous.incomeAmount || previous.amount)
+        );
+        if (idx >= 0) {
+          targetDues = dues;
+          targetDetailId = detail.id;
+          paymentIndex = idx;
+          oldAmount = detail.payments[idx]!.amount;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!targetDues || !targetDetailId || paymentIndex < 0) {
+    throw new Error(
+      "연결된 회비 분납을 찾을 수 없습니다. 장부만 수정할 수 없습니다."
+    );
+  }
+
+  const detail = targetDues.details.find((d) => d.id === targetDetailId)!;
+  const remainingWithoutThis = Math.max(
+    0,
+    detail.amount - (detail.paidAmount - oldAmount)
+  );
+  if (amount > remainingWithoutThis) {
+    throw new Error(
+      `잔여 회비(${remainingWithoutThis.toLocaleString("ko-KR")}원)를 초과할 수 없습니다.`
+    );
+  }
+
+  const memberName =
+    params.memberName ||
+    targetDues.memberName ||
+    "";
+  const description = buildDuesPaymentNote(
+    memberName,
+    targetDues.year,
+    detail.termLabel
+  );
+
+  await updateTransaction(meetingId, previous, {
+    date,
+    type: "INCOME",
+    category: REGULAR_DUES_CATEGORY,
+    description,
+    amount,
+    memberId: targetDues.memberId,
+    linkedDuesDetailId: targetDetailId,
+  });
+
+  const details = targetDues.details.map((d) => ({
+    ...d,
+    payments: [...d.payments],
+  }));
+  const nextDetail = details.find((d) => d.id === targetDetailId)!;
+  nextDetail.payments[paymentIndex] = {
+    payDate: date,
+    amount,
+    linkedTransactionId: previous.id,
+  };
+  const paid = nextDetail.payments
+    .filter((p) => p.amount > 0)
+    .reduce((s, p) => s + p.amount, 0);
+  nextDetail.paidAmount = paid;
+  nextDetail.payDate =
+    nextDetail.payments
+      .filter((p) => p.amount > 0 && p.payDate)
+      .map((p) => p.payDate)
+      .sort()
+      .at(-1) || "";
+  nextDetail.isPaid =
+    !nextDetail.isExcluded &&
+    nextDetail.amount > 0 &&
+    paid >= nextDetail.amount;
+
+  await writeDuesDoc(meetingId, targetDues, details);
+}
+
 export async function deleteLedgerAndRevertDues(params: {
   meetingId: string;
   transaction: Transaction;
@@ -1107,4 +1239,5 @@ export async function deleteLedgerAndRevertDues(params: {
   const { meetingId, transaction, duesList } = params;
   await deleteTransaction(meetingId, transaction);
   await revertDuesPaymentsForTransaction(meetingId, duesList, transaction.id);
+  await deleteEventExpenseByTransactionId(meetingId, transaction.id);
 }
