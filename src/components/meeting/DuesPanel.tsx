@@ -24,6 +24,7 @@ import { formatWon, normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
 import type { ClubAccountRow } from "@/lib/meetingBackup";
 import { listAccounts } from "@/lib/meetingSettings";
 import { buildMemberDuesSummaries } from "@/lib/memberDuesSummary";
+import { pickPrimaryAccount } from "@/lib/unpaidNotice";
 import type { DuesRecord, Member } from "@/lib/types";
 
 type Props = {
@@ -164,7 +165,14 @@ export function DuesPanel({
     return () => {
       cancelled = true;
     };
-  }, [meetingId, noticeOpen]);
+  }, [meetingId]);
+
+  const primaryAccount = useMemo(() => pickPrimaryAccount(accounts), [accounts]);
+  const accountHint = primaryAccount
+    ? `(${primaryAccount.bankName} ${primaryAccount.accountNumber}${
+        primaryAccount.holderName ? ` / ${primaryAccount.holderName}` : ""
+      })`
+    : null;
 
   // 관리자: 시드 비고(22년_상반기) 등 장부→분납 일괄 복구 (1회)
   useEffect(() => {
@@ -481,19 +489,24 @@ export function DuesPanel({
               className="w-36 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm sm:w-44"
             />
           </label>
+          {accountHint ? (
+            <p className="text-xs text-zinc-500" title="회비 납부 계좌">
+              {accountHint}
+            </p>
+          ) : null}
           <p className="text-xs text-zinc-500">
             {memberSummaries.length.toLocaleString("ko-KR")}명
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setNoticeOpen(true)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
-          >
-            미납 안내 공유
-          </button>
-          {canEdit ? (
+        {canEdit ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setNoticeOpen(true)}
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-50"
+            >
+              미납 안내 공유
+            </button>
             <button
               type="button"
               onClick={() => setCreateOpen((v) => !v)}
@@ -501,8 +514,8 @@ export function DuesPanel({
             >
               + 회비 등록
             </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <p
@@ -848,7 +861,7 @@ export function DuesPanel({
         />
       ) : null}
 
-      {noticeOpen ? (
+      {canEdit && noticeOpen ? (
         <UnpaidNoticeDialog
           clubName={clubName}
           summaries={memberSummaries}
