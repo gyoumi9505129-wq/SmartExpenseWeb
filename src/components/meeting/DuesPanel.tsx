@@ -494,9 +494,6 @@ export function DuesPanel({
               {accountHint}
             </p>
           ) : null}
-          <p className="text-xs text-zinc-500">
-            {memberSummaries.length.toLocaleString("ko-KR")}명
-          </p>
         </div>
         {canEdit ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -519,7 +516,7 @@ export function DuesPanel({
       </div>
 
       <p
-        className={`mt-4 text-lg font-bold tracking-tight sm:text-xl ${
+        className={`mt-4 text-base font-semibold leading-snug tracking-tight sm:text-lg ${
           totalUnpaidAmount > 0 ? "text-red-600" : "text-emerald-700"
         }`}
       >
