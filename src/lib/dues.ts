@@ -13,6 +13,7 @@ import {
   buildDuesPaymentNote,
   currentSystemYear,
   detailRemaining,
+  noteMatchesMemberTerm,
   REGULAR_DUES_CATEGORY,
 } from "./duesSync";
 import { createTransaction, deleteTransaction, deleteTransactionById, type LedgerInput } from "./ledger";
@@ -606,12 +607,12 @@ function isDuesLedgerCandidate(
   const desc = (t.description || t.note || "").trim();
   const cat = (t.category || "").trim();
   if (desc === ctx.expectedNote) return true;
-  return (
-    desc.includes(ctx.memberName) &&
-    desc.includes(String(ctx.year)) &&
-    desc.includes(ctx.termLabel) &&
-    (cat.includes("정기 회비") || desc.includes("회비 납부"))
-  );
+  const looksLikeDues =
+    cat.includes("정기 회비") ||
+    cat === REGULAR_DUES_CATEGORY ||
+    desc.includes("회비");
+  if (!looksLikeDues) return false;
+  return noteMatchesMemberTerm(desc, ctx.memberName, ctx.year, ctx.termLabel);
 }
 
 /** 회비 분납 1건 삭제 + 연결 장부 거래 삭제 */
@@ -725,9 +726,9 @@ export async function syncOrphanLedgersForDuesRecord(
 
 /**
  * 장부를 기준으로 분납 이력을 복구한다.
- * - 장부에만 있는 납부 → 분납에 추가
- * - 분납에만 있고 장부에 없는 일자(예: 10-29) → 제거
- * - 링크는 있는데 장부 일자가 바뀐 경우(예: 10-29→09-21) → 장부 일자로 맞춤
+ * - 시드 비고(`22년_상반기`)·표준 비고를 모두 인식
+ * - 장부가 더 풍부하면 장부 우선, 장부 매칭 실패 시 기존 분납 유지(오삭제 방지)
+ * - 링크된 장부 일자가 바뀐 경우 장부 일자로 맞춤
  */
 export async function recoverDuesPaymentsFromLedger(
   meetingId: string,
@@ -748,19 +749,19 @@ export async function recoverDuesPaymentsFromLedger(
       detail.termLabel
     );
     const ledgers = regularIncome
-      .filter((t) =>
-        t.linkedDuesDetailId === detail.id ||
-        isDuesLedgerCandidate(t, {
-          expectedNote,
-          memberName: dues.memberName,
-          memberId: dues.memberId,
-          year: dues.year,
-          termLabel: detail.termLabel,
-        })
+      .filter(
+        (t) =>
+          t.linkedDuesDetailId === detail.id ||
+          isDuesLedgerCandidate(t, {
+            expectedNote,
+            memberName: dues.memberName,
+            memberId: dues.memberId,
+            year: dues.year,
+            termLabel: detail.termLabel,
+          })
       )
       .sort(
-        (a, b) =>
-          a.date.localeCompare(b.date) || a.id.localeCompare(b.id)
+        (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)
       );
 
     const fromLedger: DuesPayment[] = ledgers.map((t) => ({
@@ -769,17 +770,33 @@ export async function recoverDuesPaymentsFromLedger(
       linkedTransactionId: t.id,
     }));
 
-    const existingSorted = [...detail.payments]
-      .filter((p) => p.amount > 0)
-      .sort(
-        (a, b) =>
-          a.payDate.localeCompare(b.payDate) ||
-          a.amount - b.amount ||
-          (a.linkedTransactionId || "").localeCompare(b.linkedTransactionId || "")
-      );
+    const existing = detail.payments.filter((p) => p.amount > 0);
+    // 장부 매칭 실패 시 기존 분납을 비우지 않음 (이전 버그 재발 방지)
+    if (fromLedger.length === 0) {
+      return detail;
+    }
+
+    // 장부 일자를 기준으로 맞춤 (시드 비고 매칭 포함). 장부에 없는 유령 분납은 제외.
+    const nextPayments = fromLedger;
+    const paid = nextPayments.reduce((s, p) => s + p.amount, 0);
+    const payDate =
+      nextPayments
+        .filter((p) => p.amount > 0 && p.payDate)
+        .map((p) => p.payDate)
+        .sort()
+        .at(-1) || "";
+    const isPaid =
+      !detail.isExcluded && detail.amount > 0 && paid >= detail.amount;
+
+    const existingSorted = [...existing].sort(
+      (a, b) =>
+        a.payDate.localeCompare(b.payDate) ||
+        a.amount - b.amount ||
+        (a.linkedTransactionId || "").localeCompare(b.linkedTransactionId || "")
+    );
     const samePayments =
-      fromLedger.length === existingSorted.length &&
-      fromLedger.every((p, i) => {
+      nextPayments.length === existingSorted.length &&
+      nextPayments.every((p, i) => {
         const cur = existingSorted[i];
         return (
           cur &&
@@ -788,16 +805,6 @@ export async function recoverDuesPaymentsFromLedger(
           (cur.linkedTransactionId || null) === p.linkedTransactionId
         );
       });
-
-    const paid = fromLedger.reduce((s, p) => s + p.amount, 0);
-    const payDate =
-      fromLedger
-        .filter((p) => p.amount > 0 && p.payDate)
-        .map((p) => p.payDate)
-        .sort()
-        .at(-1) || "";
-    const isPaid =
-      !detail.isExcluded && detail.amount > 0 && paid >= detail.amount;
 
     if (
       samePayments &&
@@ -811,14 +818,13 @@ export async function recoverDuesPaymentsFromLedger(
     changed = true;
     return {
       ...detail,
-      payments: fromLedger,
+      payments: nextPayments,
       paidAmount: paid,
       payDate,
       isPaid,
     };
   });
 
-  // 링크 누락 장부는 회차에 다시 연결 (분납 복구와 함께)
   const linkFixes: Promise<void>[] = [];
   for (const detail of nextDetails) {
     if (detail.isExcluded) continue;
@@ -851,7 +857,10 @@ export async function recoverDuesPaymentsFromLedger(
   return {
     ...dues,
     details: nextDetails,
-    paidAmount: nextDetails.reduce((s, d) => s + (d.isExcluded ? 0 : d.paidAmount), 0),
+    paidAmount: nextDetails.reduce(
+      (s, d) => s + (d.isExcluded ? 0 : d.paidAmount),
+      0
+    ),
   };
 }
 
@@ -861,20 +870,45 @@ function isRegularDuesIncome(t: Transaction): boolean {
   return (
     cat.includes("정기 회비") ||
     cat === REGULAR_DUES_CATEGORY ||
-    desc.includes("회비 납부")
+    desc.includes("회비")
   );
 }
 
 /**
- * 이력 화면 진입: 장부→분납 복구 후, 분납에 없는 고아 장부만 정리.
+ * 이력/회비 화면: 장부→분납만 복구. 장부 삭제는 하지 않음.
  */
 export async function reconcileDuesHistoryWithLedger(
   meetingId: string,
   dues: DuesRecord
 ): Promise<DuesRecord> {
-  const recovered = await recoverDuesPaymentsFromLedger(meetingId, dues);
-  await syncOrphanLedgersForDuesRecord(meetingId, recovered);
-  return recovered;
+  return recoverDuesPaymentsFromLedger(meetingId, dues);
+}
+
+/** 모임 전체 회비 문서를 장부 기준으로 일괄 복구 */
+export async function repairAllDuesPaymentsFromLedger(
+  meetingId: string,
+  duesList: DuesRecord[]
+): Promise<number> {
+  let patched = 0;
+  for (const dues of duesList) {
+    const before = JSON.stringify(
+      dues.details.map((d) => ({
+        id: d.id,
+        paid: d.paidAmount,
+        pays: d.payments,
+      }))
+    );
+    const next = await recoverDuesPaymentsFromLedger(meetingId, dues);
+    const after = JSON.stringify(
+      next.details.map((d) => ({
+        id: d.id,
+        paid: d.paidAmount,
+        pays: d.payments,
+      }))
+    );
+    if (before !== after) patched += 1;
+  }
+  return patched;
 }
 
 /** 회비 회차에 남아 있지 않은 장부 수입(고아)을 제거 */

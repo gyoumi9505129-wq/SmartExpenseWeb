@@ -14,6 +14,7 @@ import {
   distributeDuesAmounts,
   duesPaymentMethodLabel,
   normalizeDuesPaymentMethod,
+  repairAllDuesPaymentsFromLedger,
   termSlotsForMethod,
   type DuesTermPaymentInput,
 } from "@/lib/dues";
@@ -141,6 +142,26 @@ export function DuesPanel({
     )
   );
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [ledgerRepairDone, setLedgerRepairDone] = useState(false);
+
+  // 관리자: 시드 비고(22년_상반기) 등 장부→분납 일괄 복구 (1회)
+  useEffect(() => {
+    if (!canEdit || ledgerRepairDone || dues.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const n = await repairAllDuesPaymentsFromLedger(meetingId, dues);
+        if (cancelled) return;
+        setLedgerRepairDone(true);
+        if (n > 0) await onChanged();
+      } catch {
+        if (!cancelled) setLedgerRepairDone(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canEdit, dues, ledgerRepairDone, meetingId, onChanged]);
 
   const memberSummaries = useMemo(() => {
     const q = memberQuery.trim().toLowerCase();

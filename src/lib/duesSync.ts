@@ -27,6 +27,34 @@ export function buildDuesPaymentNote(
   return `${memberName} ${year}년 ${termLabel} 회비 납부`;
 }
 
+/**
+ * 앱 DuesLedgerAutoEntry.noteMatchesMemberTerm 과 동일.
+ * 표준(`유락준 2022년 하반기 회비 납부`)과
+ * 시드(`유락준 회비(22년_상반기 회비 월분납 …)`)를 모두 허용.
+ */
+export function noteMatchesMemberTerm(
+  note: string,
+  memberName: string,
+  year: number,
+  termLabel: string
+): boolean {
+  if (!note.trim() || !memberName.trim() || !termLabel.trim()) return false;
+  if (!note.includes(memberName)) return false;
+  const shortYear = String(year % 100).padStart(2, "0");
+  const markers = [
+    `${year}년 ${termLabel}`,
+    `${year}년${termLabel}`,
+    `${year}년_${termLabel}`,
+    `${year}_${termLabel}`,
+    `${year}${termLabel}`,
+    `${shortYear}년_${termLabel}`,
+    `${shortYear}년 ${termLabel}`,
+    `${shortYear}년${termLabel}`,
+    `${shortYear}_${termLabel}`,
+  ];
+  return markers.some((m) => note.includes(m));
+}
+
 export function detailRemaining(detail: {
   amount: number;
   paidAmount: number;
