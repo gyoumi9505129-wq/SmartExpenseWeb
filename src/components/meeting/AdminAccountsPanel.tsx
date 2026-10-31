@@ -10,6 +10,8 @@ import {
   rejectAccessRequest,
   setTreasurerUid,
 } from "@/lib/access";
+import { isSystemAdmin } from "@/lib/roles";
+import { normalizeLegacyAdminDisplayNames } from "@/lib/userProfile";
 import type { JoinRequest, Meeting, UserProfile } from "@/lib/types";
 
 type Props = {
@@ -31,6 +33,8 @@ export function AdminAccountsPanel({
 
   const reload = useCallback(async () => {
     try {
+      // 권한 이관 전 남은 「시스템관리자」「공용한우리」 표시명 정리
+      await normalizeLegacyAdminDisplayNames().catch(() => 0);
       const [p, u] = await Promise.all([
         fetchPendingAccessRequests(meeting.id),
         fetchUserProfiles(),
@@ -168,8 +172,6 @@ export function AdminAccountsPanel({
     emailCounts.set(e, (emailCounts.get(e) || 0) + 1);
   }
 
-  const KEEP_HINT = "jFxZS17sH8esbvmXc6OUDVIkWLr2";
-
   return (
     <section className="mt-8 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold text-zinc-900">관리 · 계정</h2>
@@ -187,28 +189,6 @@ export function AdminAccountsPanel({
         <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           {info}
         </p>
-      ) : null}
-
-      {profiles.some((p) => p.uid === KEEP_HINT) &&
-      (emailCounts.get(
-        profiles
-          .find((p) => p.uid === KEEP_HINT)
-          ?.email.trim()
-          .toLowerCase() || ""
-      ) || 0) > 1 ? (
-        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
-          <p className="text-sm text-amber-900">
-            같은 이메일 중복 UID가 있습니다. 지정 UID만 남기려면 아래를 누르세요.
-          </p>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => keepOnlyUid(KEEP_HINT)}
-            className="mt-2 rounded-lg bg-amber-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-          >
-            {KEEP_HINT.slice(0, 8)}… 만 남기기
-          </button>
-        </div>
       ) : null}
 
       <div className="mt-5">
@@ -265,6 +245,7 @@ export function AdminAccountsPanel({
             {approvedProfiles.map((p) => {
               const isOwner = p.uid === meeting.ownerUid;
               const isTreasurer = p.uid === treasurerUid;
+              const isHanuriAdmin = isSystemAdmin(p.email);
               const dup =
                 (emailCounts.get(p.email.trim().toLowerCase()) || 0) > 1;
               return (
@@ -275,7 +256,11 @@ export function AdminAccountsPanel({
                   <div className="min-w-0 text-sm">
                     <p className="font-medium text-zinc-900">
                       {p.displayName || "(이름 없음)"}
-                      {isOwner ? (
+                      {isHanuriAdmin ? (
+                        <span className="ml-2 text-xs font-normal text-emerald-700">
+                          한우리 관리자
+                        </span>
+                      ) : isOwner ? (
                         <span className="ml-2 text-xs font-normal text-zinc-500">
                           모임관리자
                         </span>
@@ -283,11 +268,6 @@ export function AdminAccountsPanel({
                       {isTreasurer ? (
                         <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                           총무
-                        </span>
-                      ) : null}
-                      {p.uid === KEEP_HINT ? (
-                        <span className="ml-2 text-xs font-semibold text-emerald-700">
-                          유지 대상
                         </span>
                       ) : null}
                     </p>
