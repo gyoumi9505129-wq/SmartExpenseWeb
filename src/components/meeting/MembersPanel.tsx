@@ -344,9 +344,9 @@ export function MembersPanel({
                   <input
                     lang="ko"
                     value={form.address}
-                    onChange={(e) => patchForm({ address: e.target.value })}
+                    readOnly
                     placeholder="주소 검색으로 입력"
-                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                    className="mt-1 w-full cursor-default rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700"
                   />
                 </label>
                 <button
@@ -359,7 +359,7 @@ export function MembersPanel({
                 </button>
               </div>
               <p className="mt-1 text-[11px] text-zinc-400">
-                검색 시 거주 지역·주소가 함께 채워집니다. 상세 주소는 직접
+                주소는 검색으로만 입력됩니다. 상세 주소(동·호수 등)만 직접
                 입력하세요.
               </p>
             </div>
