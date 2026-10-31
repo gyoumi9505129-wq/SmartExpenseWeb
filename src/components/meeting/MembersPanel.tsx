@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { IsoDateField } from "@/components/IsoDateField";
 import {
   createMember,
   updateMemberFields,
   updateMemberStatus,
 } from "@/lib/members";
+import { normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
 import {
   MEMBER_ROLE_LABEL,
   MEMBER_STATUS_LABEL,
@@ -14,6 +16,24 @@ import {
 } from "@/lib/types";
 
 type StatusFilter = "ALL" | "ACTIVE" | "DORMANT" | "WITHDRAWN";
+
+type MemberFormState = {
+  name: string;
+  phone: string;
+  email: string;
+  role: string;
+  residenceRegion: string;
+  joinDate: string;
+};
+
+const EMPTY_FORM: MemberFormState = {
+  name: "",
+  phone: "",
+  email: "",
+  role: "GENERAL",
+  residenceRegion: "",
+  joinDate: todayIsoDate(),
+};
 
 type Props = {
   meetingId: string;
@@ -33,10 +53,9 @@ export function MembersPanel({
   const [filter, setFilter] = useState<StatusFilter>("ACTIVE");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<MemberFormState>(EMPTY_FORM);
 
   const counts = useMemo(() => {
     let active = 0;
@@ -58,18 +77,81 @@ export function MembersPanel({
   const filtered =
     filter === "ALL" ? rows : rows.filter((m) => m.status === filter);
 
-  async function addMember() {
+  function patchForm(patch: Partial<MemberFormState>) {
+    setForm((prev) => ({ ...prev, ...patch }));
+  }
+
+  function openCreate() {
+    setError(null);
+    setEditingId(null);
+    setForm({ ...EMPTY_FORM, joinDate: todayIsoDate() });
+    setFormOpen(true);
+  }
+
+  function openEdit(member: Member) {
+    setError(null);
+    setEditingId(member.id);
+    setForm({
+      name: member.name || "",
+      phone: member.phone || "",
+      email: member.email || "",
+      role: member.role || "GENERAL",
+      residenceRegion: member.residenceRegion || "",
+      joinDate: member.joinDate || todayIsoDate(),
+    });
+    setFormOpen(true);
+  }
+
+  function closeForm() {
+    setFormOpen(false);
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+  }
+
+  async function saveMember() {
+    const name = form.name.trim();
+    if (!name) {
+      setError("이름을 입력해 주세요.");
+      return;
+    }
+    const joinDate = normalizeIsoDateInput(form.joinDate);
+    if (!joinDate) {
+      setError("가입일은 YYYY-MM-DD 또는 YYYYMMDD 로 입력해 주세요.");
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
-      await createMember(meetingId, { name, phone, email });
-      setCreateOpen(false);
-      setName("");
-      setPhone("");
-      setEmail("");
+      if (editingId) {
+        await updateMemberFields(meetingId, editingId, {
+          name,
+          phone: form.phone,
+          email: form.email,
+          role: form.role,
+          residenceRegion: form.residenceRegion,
+          joinDate,
+        });
+      } else {
+        await createMember(meetingId, {
+          name,
+          phone: form.phone,
+          email: form.email,
+          role: form.role,
+          residenceRegion: form.residenceRegion,
+          joinDate,
+        });
+      }
+      closeForm();
       await onChanged();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "회원 등록에 실패했습니다.");
+      setError(
+        e instanceof Error
+          ? e.message
+          : editingId
+            ? "회원 수정에 실패했습니다."
+            : "회원 등록에 실패했습니다."
+      );
     } finally {
       setBusy(false);
     }
@@ -115,7 +197,10 @@ export function MembersPanel({
         {canEdit ? (
           <button
             type="button"
-            onClick={() => setCreateOpen((v) => !v)}
+            onClick={() => {
+              if (formOpen && !editingId) closeForm();
+              else openCreate();
+            }}
             className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white"
           >
             + 회원 등록
@@ -153,49 +238,95 @@ export function MembersPanel({
         </p>
       ) : null}
 
-      {createOpen && canEdit ? (
+      {formOpen && canEdit ? (
         <div className="mt-4 rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold">회원 등록</h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <input
-              lang="ko"
-              placeholder="이름 *"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
-            <input
-              type="tel"
-              lang="en"
-              data-input-lang="numeric"
-              inputMode="tel"
-              placeholder="전화"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
-            <input
-              type="email"
-              lang="ko"
-              placeholder="이메일"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
+          <h3 className="text-sm font-semibold">
+            {editingId ? "회원 수정" : "회원 등록"}
+          </h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="text-xs text-zinc-500">
+              이름 *
+              <input
+                lang="ko"
+                value={form.name}
+                onChange={(e) => patchForm({ name: e.target.value })}
+                placeholder="이름"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              전화
+              <input
+                type="tel"
+                lang="en"
+                data-input-lang="numeric"
+                inputMode="tel"
+                value={form.phone}
+                onChange={(e) => patchForm({ phone: e.target.value })}
+                placeholder="전화"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              이메일
+              <input
+                type="email"
+                lang="ko"
+                value={form.email}
+                onChange={(e) => patchForm({ email: e.target.value })}
+                placeholder="이메일"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              직책
+              <select
+                value={form.role}
+                onChange={(e) => patchForm({ role: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              >
+                {Object.entries(MEMBER_ROLE_LABEL).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-zinc-500">
+              거주
+              <input
+                lang="ko"
+                value={form.residenceRegion}
+                onChange={(e) =>
+                  patchForm({ residenceRegion: e.target.value })
+                }
+                placeholder="거주 지역"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              가입일
+              <IsoDateField
+                value={form.joinDate}
+                onChange={(joinDate) => patchForm({ joinDate })}
+                disabled={busy}
+              />
+            </label>
           </div>
           <div className="mt-3 flex gap-2">
             <button
               type="button"
               disabled={busy}
-              onClick={addMember}
+              onClick={() => void saveMember()}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white disabled:opacity-50"
             >
-              저장
+              {editingId ? "수정 저장" : "저장"}
             </button>
             <button
               type="button"
-              onClick={() => setCreateOpen(false)}
-              className="rounded-lg border border-zinc-200 px-4 py-2 text-xs"
+              disabled={busy}
+              onClick={closeForm}
+              className="rounded-lg border border-zinc-200 px-4 py-2 text-xs disabled:opacity-50"
             >
               취소
             </button>
@@ -207,7 +338,6 @@ export function MembersPanel({
         <p className="mt-8 text-sm text-zinc-500">표시할 회원이 없습니다.</p>
       ) : (
         <>
-          {/* 모바일 카드 */}
           <ul className="mt-4 space-y-3 md:hidden">
             {filtered.map((row) => {
               const statusLabel =
@@ -223,7 +353,11 @@ export function MembersPanel({
               return (
                 <li
                   key={row.id}
-                  className="touch-card rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+                  className={`touch-card rounded-2xl border bg-white p-4 shadow-sm ${
+                    editingId === row.id
+                      ? "border-emerald-300"
+                      : "border-zinc-200"
+                  }`}
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-base font-semibold text-zinc-900">
@@ -271,6 +405,13 @@ export function MembersPanel({
                   </dl>
                   {canEdit ? (
                     <div className="mt-3 flex flex-wrap gap-3 border-t border-zinc-100 pt-3 text-xs">
+                      <button
+                        type="button"
+                        className="font-medium text-emerald-700 hover:underline"
+                        onClick={() => openEdit(row)}
+                      >
+                        수정
+                      </button>
                       {row.status !== "ACTIVE" ? (
                         <button
                           type="button"
@@ -305,7 +446,6 @@ export function MembersPanel({
             })}
           </ul>
 
-          {/* 데스크톱 테이블 */}
           <div className="mt-4 hidden overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
@@ -323,7 +463,12 @@ export function MembersPanel({
               </thead>
               <tbody>
                 {filtered.map((row) => (
-                  <tr key={row.id} className="border-t border-zinc-100">
+                  <tr
+                    key={row.id}
+                    className={`border-t border-zinc-100 ${
+                      editingId === row.id ? "bg-emerald-50/50" : ""
+                    }`}
+                  >
                     <td className="px-4 py-3 font-medium">{row.name}</td>
                     <td className="px-4 py-3">
                       {MEMBER_STATUS_LABEL[row.status] || row.status}
@@ -351,10 +496,17 @@ export function MembersPanel({
                     <td className="px-4 py-3">{row.joinDate || "-"}</td>
                     {canEdit ? (
                       <td className="whitespace-nowrap px-4 py-3 text-right text-xs">
+                        <button
+                          type="button"
+                          className="text-emerald-700 hover:underline"
+                          onClick={() => openEdit(row)}
+                        >
+                          수정
+                        </button>
                         {row.status !== "ACTIVE" ? (
                           <button
                             type="button"
-                            className="text-emerald-700 hover:underline"
+                            className="ml-2 text-emerald-700 hover:underline"
                             onClick={() => setStatus(row, "ACTIVE")}
                           >
                             활동중
