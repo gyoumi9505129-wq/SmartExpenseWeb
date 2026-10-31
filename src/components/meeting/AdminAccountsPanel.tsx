@@ -18,12 +18,14 @@ type Props = {
   meeting: Meeting;
   myUid: string;
   onMeetingChanged: () => Promise<void>;
+  onPendingCountChange?: (count: number) => void;
 };
 
 export function AdminAccountsPanel({
   meeting,
   myUid,
   onMeetingChanged,
+  onPendingCountChange,
 }: Props) {
   const [pending, setPending] = useState<JoinRequest[]>([]);
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
@@ -40,11 +42,12 @@ export function AdminAccountsPanel({
         fetchUserProfiles(),
       ]);
       setPending(p);
+      onPendingCountChange?.(p.length);
       setProfiles(u.sort((a, b) => a.displayName.localeCompare(b.displayName, "ko")));
     } catch (e) {
       setError(e instanceof Error ? e.message : "목록을 불러오지 못했습니다.");
     }
-  }, [meeting.id]);
+  }, [meeting.id, onPendingCountChange]);
 
   useEffect(() => {
     void reload();

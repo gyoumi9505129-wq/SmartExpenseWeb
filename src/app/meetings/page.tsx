@@ -23,6 +23,7 @@ import { SettingsPanel } from "@/components/meeting/SettingsPanel";
 import { useAuth } from "@/contexts/AuthProvider";
 import {
   fetchMyAccessRequest,
+  fetchPendingAccessRequests,
   requestAccess,
   resolvePrimaryMeeting,
 } from "@/lib/access";
@@ -101,6 +102,7 @@ function MeetingDetailInner() {
   const [actionBusy, setActionBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
@@ -246,6 +248,23 @@ function MeetingDetailInner() {
 
   const canManageAccounts = !isSample && !!meeting && isSystemAdmin;
 
+  const refreshPendingApprovals = useCallback(async () => {
+    if (!canManageAccounts || !meeting?.id) {
+      setPendingApprovalCount(0);
+      return;
+    }
+    try {
+      const pending = await fetchPendingAccessRequests(meeting.id);
+      setPendingApprovalCount(pending.length);
+    } catch {
+      // 탭 배지만 실패해도 화면은 유지
+    }
+  }, [canManageAccounts, meeting?.id]);
+
+  useEffect(() => {
+    void refreshPendingApprovals();
+  }, [refreshPendingApprovals]);
+
   const tabItems = useMemo(() => {
     const base: { id: Tab; label: string }[] = [
       { id: "ledger", label: "장부" },
@@ -255,12 +274,17 @@ function MeetingDetailInner() {
       { id: "report", label: "결산" },
     ];
     if (canManageAccounts) {
-      base.push({ id: "admin", label: "관리" }, { id: "settings", label: "설정" });
+      const adminLabel =
+        pendingApprovalCount > 0 ? `관리(${pendingApprovalCount})` : "관리";
+      base.push(
+        { id: "admin", label: adminLabel },
+        { id: "settings", label: "설정" }
+      );
     } else if (!isSample) {
       base.push({ id: "clubInfo", label: "관리" });
     }
     return base;
-  }, [canManageAccounts, isSample]);
+  }, [canManageAccounts, isSample, pendingApprovalCount]);
 
   const selectTab = useCallback((next: Tab) => {
     setTab(next);
@@ -599,6 +623,7 @@ function MeetingDetailInner() {
                 meeting={meeting}
                 myUid={user.uid}
                 onMeetingChanged={reload}
+                onPendingCountChange={setPendingApprovalCount}
               />
             ) : null}
             {tab === "settings" &&
