@@ -42,6 +42,8 @@ export const SAMPLE_MEMBERS: Member[] = [
     role: "GENERAL",
     linkedUid: "",
     residenceRegion: "대전",
+    address: "",
+    detailAddress: "",
   },
   {
     id: "s2",
@@ -53,6 +55,8 @@ export const SAMPLE_MEMBERS: Member[] = [
     role: "PRESIDENT",
     linkedUid: "",
     residenceRegion: "서울",
+    address: "",
+    detailAddress: "",
   },
   {
     id: "s3",
@@ -64,6 +68,8 @@ export const SAMPLE_MEMBERS: Member[] = [
     role: "TREASURER",
     linkedUid: "",
     residenceRegion: "경기도 광명",
+    address: "",
+    detailAddress: "",
   },
 ];
 

@@ -64,6 +64,8 @@ export type Member = {
   role: string;
   linkedUid: string;
   residenceRegion: string;
+  address: string;
+  detailAddress: string;
 };
 
 export type Transaction = {

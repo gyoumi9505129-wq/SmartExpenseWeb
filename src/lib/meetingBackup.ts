@@ -369,8 +369,8 @@ export async function restoreMeetingBackup(
         residenceRegion: m.residenceRegion || "",
         linkedUid: m.linkedUid || "",
         birthDate: "",
-        address: "",
-        detailAddress: "",
+        address: m.address || "",
+        detailAddress: m.detailAddress || "",
         isLunarBirth: false,
         selfEnrolled: false,
       });

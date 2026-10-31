@@ -20,6 +20,8 @@ export async function createMember(
     email?: string;
     role?: string;
     residenceRegion?: string;
+    address?: string;
+    detailAddress?: string;
     joinDate?: string;
   }
 ): Promise<string> {
@@ -41,8 +43,8 @@ export async function createMember(
       role: input.role || "GENERAL",
       residenceRegion: input.residenceRegion?.trim() || "",
       birthDate: "",
-      address: "",
-      detailAddress: "",
+      address: input.address?.trim() || "",
+      detailAddress: input.detailAddress?.trim() || "",
       isLunarBirth: false,
       linkedUid: "",
       selfEnrolled: false,
@@ -98,7 +100,17 @@ export async function updateMemberFields(
   meetingId: string,
   memberId: string,
   fields: Partial<
-    Pick<Member, "name" | "phone" | "email" | "role" | "residenceRegion" | "joinDate">
+    Pick<
+      Member,
+      | "name"
+      | "phone"
+      | "email"
+      | "role"
+      | "residenceRegion"
+      | "address"
+      | "detailAddress"
+      | "joinDate"
+    >
   >
 ): Promise<void> {
   const payload: Record<string, string> = {};
@@ -108,6 +120,9 @@ export async function updateMemberFields(
   if (fields.role != null) payload.role = fields.role;
   if (fields.residenceRegion != null)
     payload.residenceRegion = fields.residenceRegion.trim();
+  if (fields.address != null) payload.address = fields.address.trim();
+  if (fields.detailAddress != null)
+    payload.detailAddress = fields.detailAddress.trim();
   if (fields.joinDate != null) payload.joinDate = fields.joinDate;
   await updateDoc(
     doc(

@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DaumPostcodeDialog } from "@/components/DaumPostcodeDialog";
 import { IsoDateField } from "@/components/IsoDateField";
+import {
+  formatResidenceRegion,
+  pickRoadOrJibunAddress,
+  type DaumPostcodeResult,
+} from "@/lib/daumPostcode";
 import {
   createMember,
   updateMemberFields,
@@ -23,6 +29,8 @@ type MemberFormState = {
   email: string;
   role: string;
   residenceRegion: string;
+  address: string;
+  detailAddress: string;
   joinDate: string;
 };
 
@@ -32,6 +40,8 @@ const EMPTY_FORM: MemberFormState = {
   email: "",
   role: "GENERAL",
   residenceRegion: "",
+  address: "",
+  detailAddress: "",
   joinDate: todayIsoDate(),
 };
 
@@ -56,6 +66,7 @@ export function MembersPanel({
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<MemberFormState>(EMPTY_FORM);
+  const [addressSearchOpen, setAddressSearchOpen] = useState(false);
 
   const counts = useMemo(() => {
     let active = 0;
@@ -97,9 +108,19 @@ export function MembersPanel({
       email: member.email || "",
       role: member.role || "GENERAL",
       residenceRegion: member.residenceRegion || "",
+      address: member.address || "",
+      detailAddress: member.detailAddress || "",
       joinDate: member.joinDate || todayIsoDate(),
     });
     setFormOpen(true);
+  }
+
+  function applyAddressSearch(data: DaumPostcodeResult) {
+    patchForm({
+      residenceRegion: formatResidenceRegion(data),
+      address: pickRoadOrJibunAddress(data),
+    });
+    setAddressSearchOpen(false);
   }
 
   function closeForm() {
@@ -130,6 +151,8 @@ export function MembersPanel({
           email: form.email,
           role: form.role,
           residenceRegion: form.residenceRegion,
+          address: form.address,
+          detailAddress: form.detailAddress,
           joinDate,
         });
       } else {
@@ -139,6 +162,8 @@ export function MembersPanel({
           email: form.email,
           role: form.role,
           residenceRegion: form.residenceRegion,
+          address: form.address,
+          detailAddress: form.detailAddress,
           joinDate,
         });
       }
@@ -300,7 +325,7 @@ export function MembersPanel({
                 onChange={(e) =>
                   patchForm({ residenceRegion: e.target.value })
                 }
-                placeholder="거주 지역"
+                placeholder="예: 경기도 화성"
                 className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
               />
             </label>
@@ -310,6 +335,42 @@ export function MembersPanel({
                 value={form.joinDate}
                 onChange={(joinDate) => patchForm({ joinDate })}
                 disabled={busy}
+              />
+            </label>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="min-w-0 flex-1 text-xs text-zinc-500">
+                  주소
+                  <input
+                    lang="ko"
+                    value={form.address}
+                    onChange={(e) => patchForm({ address: e.target.value })}
+                    placeholder="주소 검색으로 입력"
+                    className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setAddressSearchOpen(true)}
+                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  주소 검색
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-zinc-400">
+                검색 시 거주 지역·주소가 함께 채워집니다. 상세 주소는 직접
+                입력하세요.
+              </p>
+            </div>
+            <label className="text-xs text-zinc-500 sm:col-span-2 lg:col-span-3">
+              상세 주소
+              <input
+                lang="ko"
+                value={form.detailAddress}
+                onChange={(e) => patchForm({ detailAddress: e.target.value })}
+                placeholder="동·호수 등"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
               />
             </label>
           </div>
@@ -332,6 +393,13 @@ export function MembersPanel({
             </button>
           </div>
         </div>
+      ) : null}
+
+      {addressSearchOpen ? (
+        <DaumPostcodeDialog
+          onComplete={applyAddressSearch}
+          onClose={() => setAddressSearchOpen(false)}
+        />
       ) : null}
 
       {filtered.length === 0 ? (
