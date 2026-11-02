@@ -11,7 +11,13 @@ import {
   writeBatch,
   type Firestore,
 } from "firebase/firestore";
-import { getFirebaseDb } from "./firebase";
+import {
+  getDownloadURL,
+  getMetadata,
+  ref,
+  uploadString,
+} from "firebase/storage";
+import { getFirebaseAuth, getFirebaseDb, getFirebaseStorage } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import type {
   DuesRecord,
@@ -501,6 +507,100 @@ export function readBackupFile(file: File): Promise<MeetingBackupPayload> {
     reader.onerror = () => reject(new Error("파일을 읽지 못했습니다."));
     reader.readAsText(file, "utf-8");
   });
+}
+
+/** 모임당 클라우드 백업 1개(덮어쓰기). Storage 고정 경로. */
+export const CLOUD_BACKUP_OBJECT = "latest.smartexpense.json";
+
+export type CloudBackupMeta = {
+  exists: boolean;
+  exportedAt: string | null;
+  updatedBy: string | null;
+  sizeBytes: number | null;
+};
+
+function cloudBackupRef(meetingId: string) {
+  return ref(
+    getFirebaseStorage(),
+    `meetingBackups/${meetingId}/${CLOUD_BACKUP_OBJECT}`
+  );
+}
+
+/**
+ * 클라우드에 최신 백업 1건만 저장(기존 파일 덮어쓰기).
+ * 용량 증가 없이 최근 스냅샷만 유지한다.
+ */
+export async function saveCloudBackup(
+  meetingId: string,
+  onProgress?: (msg: string) => void
+): Promise<CloudBackupMeta> {
+  onProgress?.("클라우드 백업 데이터 수집 중…");
+  const payload = await exportMeetingBackup(meetingId);
+  const exportedAt = payload.exportedAt;
+  const email = getFirebaseAuth().currentUser?.email || "";
+  onProgress?.("클라우드에 업로드 중…(이전 백업은 덮어씀)");
+  const storageRef = cloudBackupRef(meetingId);
+  await uploadString(storageRef, JSON.stringify(payload), "raw", {
+    contentType: "application/json;charset=utf-8",
+    customMetadata: {
+      exportedAt,
+      updatedBy: email,
+      format: BACKUP_FORMAT,
+      version: String(BACKUP_VERSION),
+      meetingName: payload.meeting.name || "",
+    },
+  });
+  onProgress?.("클라우드 백업 완료");
+  return {
+    exists: true,
+    exportedAt,
+    updatedBy: email || null,
+    sizeBytes: null,
+  };
+}
+
+export async function fetchCloudBackupMeta(
+  meetingId: string
+): Promise<CloudBackupMeta> {
+  try {
+    const meta = await getMetadata(cloudBackupRef(meetingId));
+    const custom = meta.customMetadata || {};
+    return {
+      exists: true,
+      exportedAt: custom.exportedAt || meta.updated || meta.timeCreated || null,
+      updatedBy: custom.updatedBy || null,
+      sizeBytes: typeof meta.size === "number" ? meta.size : null,
+    };
+  } catch {
+    return {
+      exists: false,
+      exportedAt: null,
+      updatedBy: null,
+      sizeBytes: null,
+    };
+  }
+}
+
+export async function loadCloudBackup(
+  meetingId: string,
+  onProgress?: (msg: string) => void
+): Promise<MeetingBackupPayload> {
+  onProgress?.("클라우드 백업 다운로드 중…");
+  const url = await getDownloadURL(cloudBackupRef(meetingId));
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error("클라우드 백업을 불러오지 못했습니다.");
+  }
+  const text = await res.text();
+  return parseBackupJson(text);
+}
+
+export async function restoreCloudBackup(
+  meetingId: string,
+  onProgress?: (msg: string) => void
+): Promise<void> {
+  const payload = await loadCloudBackup(meetingId, onProgress);
+  await restoreMeetingBackup(meetingId, payload, onProgress);
 }
 
 export type { Meeting };

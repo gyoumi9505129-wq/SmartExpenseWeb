@@ -5,10 +5,15 @@ import {
   clearMeetingData,
   downloadBackupJson,
   exportMeetingBackup,
+  fetchCloudBackupMeta,
   loadSeedBackupFromPublic,
   readBackupFile,
+  restoreCloudBackup,
   restoreMeetingBackup,
+  saveCloudBackup,
   SEED_FILE_PATH,
+  type CloudBackupMeta,
+  type ClubAccountRow,
 } from "@/lib/meetingBackup";
 import { MeetingHistoryDialog } from "@/components/meeting/MeetingHistoryDialog";
 import {
@@ -21,7 +26,6 @@ import {
   upsertAccount,
 } from "@/lib/meetingSettings";
 import { RichTitleEditor } from "@/components/RichTitleEditor";
-import type { ClubAccountRow } from "@/lib/meetingBackup";
 import { escapeHtml, titleDisplayHtml } from "@/lib/titleHtml";
 import type { Meeting } from "@/lib/types";
 
@@ -59,16 +63,19 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [cloudMeta, setCloudMeta] = useState<CloudBackupMeta | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const seedFileRef = useRef<HTMLInputElement>(null);
 
   const reloadLists = useCallback(async () => {
-    const [h, a] = await Promise.all([
+    const [h, a, cloud] = await Promise.all([
       listHistories(meetingId),
       listAccounts(meetingId),
+      fetchCloudBackupMeta(meetingId),
     ]);
     setHistoryCount(h.length);
     setAccounts(a);
+    setCloudMeta(cloud);
   }, [meetingId]);
 
   useEffect(() => {
@@ -325,9 +332,65 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
       <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h2 className="text-base font-semibold">백업 / 복원</h2>
         <p className="mt-1 text-xs text-zinc-500">
-          권장 순서: 파일 백업 → (필요 시) 초기화 → 파일 복원 또는 초기 데이터
-          파일 업로드
+          권장: 클라우드 백업(최근 1건 덮어쓰기) → (필요 시) 초기화 → 클라우드
+          복원. 파일 백업은 PC에 따로 보관할 때 사용합니다.
         </p>
+
+        <div className="mt-4 space-y-3 rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-medium text-emerald-900">
+              클라우드 백업 (최근 1건만 유지)
+            </h3>
+            <p className="text-[11px] text-emerald-800/80">
+              {cloudMeta?.exists && cloudMeta.exportedAt
+                ? `마지막 백업: ${cloudMeta.exportedAt.replace("T", " ").slice(0, 19)}`
+                : "저장된 클라우드 백업 없음"}
+              {cloudMeta?.updatedBy ? ` · ${cloudMeta.updatedBy}` : ""}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                if (
+                  !confirm(
+                    "클라우드에 현재 데이터를 백업합니다.\n이전 클라우드 백업은 덮어씁니다(최근 1건만 유지). 계속할까요?"
+                  )
+                ) {
+                  return;
+                }
+                void run(
+                  () => saveCloudBackup(meetingId, setProgress),
+                  "클라우드 백업을 저장했습니다. (이전 백업은 덮어씀)"
+                );
+              }}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+            >
+              클라우드 백업
+            </button>
+            <button
+              type="button"
+              disabled={busy || !cloudMeta?.exists}
+              onClick={() => {
+                if (
+                  !confirm(
+                    "현재 모임 데이터를 지운 뒤 클라우드 최근 백업으로 복원합니다. 계속할까요?"
+                  )
+                ) {
+                  return;
+                }
+                void run(
+                  () => restoreCloudBackup(meetingId, setProgress),
+                  "클라우드 백업으로 복원했습니다."
+                );
+              }}
+              className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-medium text-emerald-900 disabled:opacity-50"
+            >
+              클라우드 복원
+            </button>
+          </div>
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button
