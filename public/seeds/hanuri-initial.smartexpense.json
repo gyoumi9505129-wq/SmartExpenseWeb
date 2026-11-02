@@ -6258,11 +6258,24 @@
       "type": "EXPENSE",
       "category": "식대/다과비 (모임 식사, 카페 등)",
       "description": "김성겸 소주값(23년 상반기모임)",
-      "amount": 40000,
+      "amount": 340000,
       "incomeAmount": 0,
-      "expenseAmount": 40000,
+      "expenseAmount": 340000,
       "memberId": null,
       "note": "김성겸 소주값(23년 상반기모임)",
+      "linkedDuesDetailId": null
+    },
+    {
+      "id": "seed_tx_0561",
+      "date": "2023-06-08",
+      "type": "INCOME",
+      "category": "정기 회비 (월/연회비)",
+      "description": "김성겸 회비 입금(23년_상/하반기)",
+      "amount": 300000,
+      "incomeAmount": 300000,
+      "expenseAmount": 0,
+      "memberId": null,
+      "note": "김성겸 회비 입금(23년_상/하반기)",
       "linkedDuesDetailId": null
     },
     {
@@ -6595,12 +6608,12 @@
       "date": "2024-08-22",
       "type": "INCOME",
       "category": "정기 회비 (월/연회비)",
-      "description": "김성겸 회비(23년_상/하반기)",
+      "description": "김성겸 회비(24년_상/하반기)",
       "amount": 300000,
       "incomeAmount": 300000,
       "expenseAmount": 0,
       "memberId": null,
-      "note": "김성겸 회비(23년_상/하반기)",
+      "note": "김성겸 회비(24년_상/하반기)",
       "linkedDuesDetailId": null
     },
     {
@@ -7037,12 +7050,12 @@
       "date": "2025-12-02",
       "type": "INCOME",
       "category": "정기 회비 (월/연회비)",
-      "description": "김성겸 회비(24년_상/하반기)",
+      "description": "김성겸 회비(25년_상/하반기)",
       "amount": 300000,
       "incomeAmount": 300000,
       "expenseAmount": 0,
       "memberId": null,
-      "note": "김성겸 회비(24년_상/하반기)",
+      "note": "김성겸 회비(25년_상/하반기)",
       "linkedDuesDetailId": null
     },
     {
@@ -9090,12 +9103,12 @@
           "paidAmount": 150000,
           "isPaid": true,
           "isExcluded": false,
-          "payDate": "2024-08-22",
+          "payDate": "2023-06-08",
           "payments": [
             {
-              "payDate": "2024-08-22",
+              "payDate": "2023-06-08",
               "amount": 150000,
-              "linkedTransactionId": null
+              "linkedTransactionId": "seed_tx_0561"
             }
           ]
         },
@@ -9106,12 +9119,12 @@
           "paidAmount": 150000,
           "isPaid": true,
           "isExcluded": false,
-          "payDate": "2024-08-22",
+          "payDate": "2023-06-08",
           "payments": [
             {
-              "payDate": "2024-08-22",
+              "payDate": "2023-06-08",
               "amount": 150000,
-              "linkedTransactionId": null
+              "linkedTransactionId": "seed_tx_0561"
             }
           ]
         }
@@ -9134,12 +9147,12 @@
           "paidAmount": 150000,
           "isPaid": true,
           "isExcluded": false,
-          "payDate": "2025-12-02",
+          "payDate": "2024-08-22",
           "payments": [
             {
-              "payDate": "2025-12-02",
+              "payDate": "2024-08-22",
               "amount": 150000,
-              "linkedTransactionId": null
+              "linkedTransactionId": "seed_tx_0490"
             }
           ]
         },
@@ -9150,12 +9163,12 @@
           "paidAmount": 150000,
           "isPaid": true,
           "isExcluded": false,
-          "payDate": "2025-12-02",
+          "payDate": "2024-08-22",
           "payments": [
             {
-              "payDate": "2025-12-02",
+              "payDate": "2024-08-22",
               "amount": 150000,
-              "linkedTransactionId": null
+              "linkedTransactionId": "seed_tx_0490"
             }
           ]
         }
@@ -9175,24 +9188,36 @@
           "id": "seed_dd_seed_김성겸_2025_상반기",
           "termLabel": "상반기",
           "amount": 150000,
-          "paidAmount": 0,
-          "isPaid": false,
+          "paidAmount": 150000,
+          "isPaid": true,
           "isExcluded": false,
-          "payDate": "",
-          "payments": []
+          "payDate": "2025-12-02",
+          "payments": [
+            {
+              "payDate": "2025-12-02",
+              "amount": 150000,
+              "linkedTransactionId": "seed_tx_0524"
+            }
+          ]
         },
         {
           "id": "seed_dd_seed_김성겸_2025_하반기",
           "termLabel": "하반기",
           "amount": 150000,
-          "paidAmount": 0,
-          "isPaid": false,
+          "paidAmount": 150000,
+          "isPaid": true,
           "isExcluded": false,
-          "payDate": "",
-          "payments": []
+          "payDate": "2025-12-02",
+          "payments": [
+            {
+              "payDate": "2025-12-02",
+              "amount": 150000,
+              "linkedTransactionId": "seed_tx_0524"
+            }
+          ]
         }
       ],
-      "paidAmount": 0,
+      "paidAmount": 300000,
       "status": ""
     },
     {
