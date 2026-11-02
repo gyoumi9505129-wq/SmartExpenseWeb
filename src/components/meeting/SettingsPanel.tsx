@@ -360,10 +360,9 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
                 ) {
                   return;
                 }
-                void run(
-                  () => saveCloudBackup(meetingId, setProgress),
-                  "클라우드 백업을 저장했습니다. (이전 백업은 덮어씀)"
-                );
+                void run(async () => {
+                  await saveCloudBackup(meetingId, setProgress);
+                }, "클라우드 백업을 저장했습니다. (이전 백업은 덮어씀)");
               }}
               className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
             >

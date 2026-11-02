@@ -8,7 +8,6 @@ import {
   type Auth,
 } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
 import {
   clearFirebaseAuthStorageSync,
   shouldDiscardAuthSessionOnBoot,
@@ -43,7 +42,6 @@ let app: FirebaseApp;
 let auth: Auth;
 let authPersistenceReady: Promise<Auth> | null = null;
 let db: Firestore;
-let storage: FirebaseStorage;
 
 /** 사설 LAN IP (폰에서 http://192.168.x.x:3000 접속) */
 export function isLanHostname(hostname: string): boolean {
@@ -164,13 +162,6 @@ export function getFirebaseDb(): Firestore {
     db = getFirestore(getFirebaseApp());
   }
   return db;
-}
-
-export function getFirebaseStorage(): FirebaseStorage {
-  if (!storage) {
-    storage = getStorage(getFirebaseApp());
-  }
-  return storage;
 }
 
 export const firebaseConfig = firebaseEnvConfig;

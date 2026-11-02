@@ -5,19 +5,14 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   setDoc,
   updateDoc,
   writeBatch,
   type Firestore,
 } from "firebase/firestore";
-import {
-  getDownloadURL,
-  getMetadata,
-  ref,
-  uploadString,
-} from "firebase/storage";
-import { getFirebaseAuth, getFirebaseDb, getFirebaseStorage } from "./firebase";
+import { getFirebaseAuth, getFirebaseDb } from "./firebase";
 import { COLLECTIONS } from "./paths";
 import type {
   DuesRecord,
@@ -509,8 +504,9 @@ export function readBackupFile(file: File): Promise<MeetingBackupPayload> {
   });
 }
 
-/** 모임당 클라우드 백업 1개(덮어쓰기). Storage 고정 경로. */
-export const CLOUD_BACKUP_OBJECT = "latest.smartexpense.json";
+/** 모임당 클라우드 백업 1개(덮어쓰기). Firestore 고정 문서. */
+export const CLOUD_BACKUP_DOC_ID = "latest";
+export const CLOUD_BACKUPS = "cloudBackups";
 
 export type CloudBackupMeta = {
   exists: boolean;
@@ -519,15 +515,18 @@ export type CloudBackupMeta = {
   sizeBytes: number | null;
 };
 
-function cloudBackupRef(meetingId: string) {
-  return ref(
-    getFirebaseStorage(),
-    `meetingBackups/${meetingId}/${CLOUD_BACKUP_OBJECT}`
+function cloudBackupDoc(meetingId: string) {
+  return doc(
+    getFirebaseDb(),
+    COLLECTIONS.MEETINGS,
+    meetingId,
+    CLOUD_BACKUPS,
+    CLOUD_BACKUP_DOC_ID
   );
 }
 
 /**
- * 클라우드에 최신 백업 1건만 저장(기존 파일 덮어쓰기).
+ * 클라우드에 최신 백업 1건만 저장(기존 문서 덮어쓰기).
  * 용량 증가 없이 최근 스냅샷만 유지한다.
  */
 export async function saveCloudBackup(
@@ -538,40 +537,31 @@ export async function saveCloudBackup(
   const payload = await exportMeetingBackup(meetingId);
   const exportedAt = payload.exportedAt;
   const email = getFirebaseAuth().currentUser?.email || "";
-  onProgress?.("클라우드에 업로드 중…(이전 백업은 덮어씀)");
-  const storageRef = cloudBackupRef(meetingId);
-  await uploadString(storageRef, JSON.stringify(payload), "raw", {
-    contentType: "application/json;charset=utf-8",
-    customMetadata: {
-      exportedAt,
-      updatedBy: email,
-      format: BACKUP_FORMAT,
-      version: String(BACKUP_VERSION),
-      meetingName: payload.meeting.name || "",
-    },
+  const json = JSON.stringify(payload);
+  onProgress?.("클라우드에 저장 중…(이전 백업은 덮어씀)");
+  await setDoc(cloudBackupDoc(meetingId), {
+    format: BACKUP_FORMAT,
+    version: BACKUP_VERSION,
+    exportedAt,
+    updatedBy: email,
+    meetingName: payload.meeting.name || "",
+    sizeBytes: new TextEncoder().encode(json).length,
+    json,
   });
   onProgress?.("클라우드 백업 완료");
   return {
     exists: true,
     exportedAt,
     updatedBy: email || null,
-    sizeBytes: null,
+    sizeBytes: new TextEncoder().encode(json).length,
   };
 }
 
 export async function fetchCloudBackupMeta(
   meetingId: string
 ): Promise<CloudBackupMeta> {
-  try {
-    const meta = await getMetadata(cloudBackupRef(meetingId));
-    const custom = meta.customMetadata || {};
-    return {
-      exists: true,
-      exportedAt: custom.exportedAt || meta.updated || meta.timeCreated || null,
-      updatedBy: custom.updatedBy || null,
-      sizeBytes: typeof meta.size === "number" ? meta.size : null,
-    };
-  } catch {
+  const snap = await getDoc(cloudBackupDoc(meetingId));
+  if (!snap.exists()) {
     return {
       exists: false,
       exportedAt: null,
@@ -579,20 +569,30 @@ export async function fetchCloudBackupMeta(
       sizeBytes: null,
     };
   }
+  const data = snap.data();
+  return {
+    exists: true,
+    exportedAt:
+      typeof data.exportedAt === "string" ? data.exportedAt : null,
+    updatedBy: typeof data.updatedBy === "string" ? data.updatedBy : null,
+    sizeBytes: typeof data.sizeBytes === "number" ? data.sizeBytes : null,
+  };
 }
 
 export async function loadCloudBackup(
   meetingId: string,
   onProgress?: (msg: string) => void
 ): Promise<MeetingBackupPayload> {
-  onProgress?.("클라우드 백업 다운로드 중…");
-  const url = await getDownloadURL(cloudBackupRef(meetingId));
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) {
-    throw new Error("클라우드 백업을 불러오지 못했습니다.");
+  onProgress?.("클라우드 백업 불러오는 중…");
+  const snap = await getDoc(cloudBackupDoc(meetingId));
+  if (!snap.exists()) {
+    throw new Error("저장된 클라우드 백업이 없습니다.");
   }
-  const text = await res.text();
-  return parseBackupJson(text);
+  const data = snap.data();
+  if (typeof data.json !== "string" || !data.json) {
+    throw new Error("클라우드 백업 내용이 비어 있습니다.");
+  }
+  return parseBackupJson(data.json);
 }
 
 export async function restoreCloudBackup(
