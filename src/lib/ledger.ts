@@ -233,7 +233,10 @@ export async function createTransaction(
   meetingId: string,
   input: LedgerInput
 ): Promise<string> {
-  const payload = toPayload(input);
+  const payload = {
+    ...toPayload(input),
+    createdAt: new Date().toISOString(),
+  };
   const ref = await addDoc(
     collection(
       getFirebaseDb(),

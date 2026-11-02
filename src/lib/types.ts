@@ -80,6 +80,8 @@ export type Transaction = {
   memberId?: string | null;
   note?: string | null;
   linkedDuesDetailId?: string | null;
+  /** ISO-8601 생성 시각. 같은 일자 정렬용 (수정해도 바뀌지 않음) */
+  createdAt?: string | null;
 };
 
 /** Firestore `eventExpenses` — 앱 경조 탭과 동일 */

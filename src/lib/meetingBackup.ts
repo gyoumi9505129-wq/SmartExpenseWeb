@@ -398,6 +398,7 @@ export async function restoreMeetingBackup(
         expenseAmount: t.expenseAmount,
         memberId: t.memberId ?? null,
         linkedDuesDetailId: t.linkedDuesDetailId ?? null,
+        ...(t.createdAt ? { createdAt: t.createdAt } : {}),
       });
     };
   });

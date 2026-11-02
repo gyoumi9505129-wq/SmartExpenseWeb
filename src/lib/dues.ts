@@ -768,7 +768,10 @@ export async function recoverDuesPaymentsFromLedger(
           })
       )
       .sort(
-        (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)
+        (a, b) =>
+          a.date.localeCompare(b.date) ||
+          (a.createdAt || "").localeCompare(b.createdAt || "") ||
+          a.id.localeCompare(b.id)
       );
 
     const fromLedger: DuesPayment[] = ledgers.map((t) => ({

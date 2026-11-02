@@ -84,7 +84,13 @@ export function ReportPanel({
     if (!detailCategory) return [];
     return yearTxs
       .filter((tx) => tx.category === detailCategory)
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort((a, b) => {
+        const byDate = b.date.localeCompare(a.date);
+        if (byDate !== 0) return byDate;
+        const byCreated = (b.createdAt || "").localeCompare(a.createdAt || "");
+        if (byCreated !== 0) return byCreated;
+        return b.id.localeCompare(a.id);
+      });
   }, [detailCategory, yearTxs]);
 
   const incomeSlices = report.categorySummaries.filter((c) => c.income > 0);

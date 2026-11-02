@@ -85,13 +85,17 @@ function mapTransaction(id: string, data: DocumentData): Transaction {
     memberId: asString(data.memberId) || null,
     note: asString(data.note) || null,
     linkedDuesDetailId: asString(data.linkedDuesDetailId) || null,
+    createdAt: asString(data.createdAt) || null,
   };
 }
 
 function sortTransactionsNewestFirst(rows: Transaction[]): Transaction[] {
   rows.sort((a, b) => {
     const byDate = b.date.localeCompare(a.date);
-    return byDate !== 0 ? byDate : b.id.localeCompare(a.id);
+    if (byDate !== 0) return byDate;
+    const byCreated = (b.createdAt || "").localeCompare(a.createdAt || "");
+    if (byCreated !== 0) return byCreated;
+    return b.id.localeCompare(a.id);
   });
   return rows;
 }
