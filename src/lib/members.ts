@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
-import { todayIsoDate } from "./format";
+import { phoneDigits, todayIsoDate } from "./format";
 import { COLLECTIONS } from "./paths";
 import type { Member, Meeting } from "./types";
 
@@ -38,7 +38,7 @@ export async function createMember(
       name,
       status: "ACTIVE",
       joinDate: input.joinDate || todayIsoDate(),
-      phone: input.phone?.trim() || "",
+      phone: phoneDigits(input.phone || ""),
       email: input.email?.trim().toLowerCase() || "",
       role: input.role || "GENERAL",
       residenceRegion: input.residenceRegion?.trim() || "",
@@ -115,7 +115,7 @@ export async function updateMemberFields(
 ): Promise<void> {
   const payload: Record<string, string> = {};
   if (fields.name != null) payload.name = fields.name.trim();
-  if (fields.phone != null) payload.phone = fields.phone.trim();
+  if (fields.phone != null) payload.phone = phoneDigits(fields.phone);
   if (fields.email != null) payload.email = fields.email.trim().toLowerCase();
   if (fields.role != null) payload.role = fields.role;
   if (fields.residenceRegion != null)

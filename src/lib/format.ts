@@ -64,6 +64,31 @@ export function epochMsToIsoDate(ms: number): string {
   return `${y}-${m}-${day}`;
 }
 
+/** 앱 `PHONE_MAX_LENGTH` — 숫자만 최대 11자리 */
+export const PHONE_MAX_LENGTH = 11;
+
+/** 전화번호에서 숫자만 추출 */
+export function phoneDigits(raw: string): string {
+  return (raw || "").replace(/\D/g, "").slice(0, PHONE_MAX_LENGTH);
+}
+
+/**
+ * 앱 `formatPhoneDigits` — 010-1234-5678 형태.
+ * 저장은 숫자만, 화면 표시·입력 중 포맷용.
+ */
+export function formatPhoneDigits(digitsOrRaw: string): string {
+  const d = phoneDigits(digitsOrRaw);
+  if (d.length <= 3) return d;
+  if (d.length <= 7) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+}
+
+/** 조회용. 숫자 없으면 "-" 등 호출측에서 처리하도록 빈 문자열 */
+export function formatPhoneDisplay(raw: string | null | undefined): string {
+  const d = phoneDigits(raw || "");
+  return d ? formatPhoneDigits(d) : "";
+}
+
 export function moneyNumber(v: unknown): number {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string" && v.trim()) {

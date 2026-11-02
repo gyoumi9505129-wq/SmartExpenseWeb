@@ -13,7 +13,12 @@ import {
   updateMemberFields,
   updateMemberStatus,
 } from "@/lib/members";
-import { normalizeIsoDateInput, todayIsoDate } from "@/lib/format";
+import {
+  formatPhoneDigits,
+  formatPhoneDisplay,
+  normalizeIsoDateInput,
+  todayIsoDate,
+} from "@/lib/format";
 import {
   MEMBER_ROLE_LABEL,
   MEMBER_STATUS_LABEL,
@@ -104,7 +109,7 @@ export function MembersPanel({
     setEditingId(member.id);
     setForm({
       name: member.name || "",
-      phone: member.phone || "",
+      phone: formatPhoneDisplay(member.phone),
       email: member.email || "",
       role: member.role || "GENERAL",
       residenceRegion: member.residenceRegion || "",
@@ -286,9 +291,13 @@ export function MembersPanel({
                 lang="ko"
                 data-input-lang="numeric"
                 inputMode="tel"
+                autoComplete="tel"
+                maxLength={13}
                 value={form.phone}
-                onChange={(e) => patchForm({ phone: e.target.value })}
-                placeholder="전화"
+                onChange={(e) =>
+                  patchForm({ phone: formatPhoneDigits(e.target.value) })
+                }
+                placeholder="010-0000-0000"
                 className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
               />
             </label>
@@ -460,7 +469,7 @@ export function MembersPanel({
                   <dl className="mt-3 space-y-1.5 text-sm text-zinc-600">
                     <div className="flex gap-2">
                       <dt className="w-14 shrink-0 text-zinc-400">전화</dt>
-                      <dd>{row.phone || "-"}</dd>
+                      <dd>{formatPhoneDisplay(row.phone) || "-"}</dd>
                     </div>
                     <div className="flex gap-2">
                       <dt className="w-14 shrink-0 text-zinc-400">거주</dt>
@@ -559,7 +568,9 @@ export function MembersPanel({
                         MEMBER_ROLE_LABEL[row.role] || row.role
                       )}
                     </td>
-                    <td className="px-4 py-3">{row.phone || "-"}</td>
+                    <td className="px-4 py-3">
+                      {formatPhoneDisplay(row.phone) || "-"}
+                    </td>
                     <td className="px-4 py-3">{row.residenceRegion || "-"}</td>
                     <td className="px-4 py-3">{row.joinDate || "-"}</td>
                     {canEdit ? (
