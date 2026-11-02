@@ -37,7 +37,7 @@ export function IsoDateField({
     <div className={`relative ${className || ""}`}>
       <input
         type="text"
-        lang="en"
+        lang="ko"
         data-input-lang="numeric"
         inputMode="numeric"
         autoComplete="off"

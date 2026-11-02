@@ -283,7 +283,7 @@ export function MembersPanel({
               전화
               <input
                 type="tel"
-                lang="en"
+                lang="ko"
                 data-input-lang="numeric"
                 inputMode="tel"
                 value={form.phone}

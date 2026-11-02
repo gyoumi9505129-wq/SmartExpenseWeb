@@ -569,8 +569,9 @@ export function DuesPanel({
               연회비 (총 납부 대상 금액)
               <input
                 type="number"
-                lang="en"
+                lang="ko"
                 data-input-lang="numeric"
+                inputMode="decimal"
                 value={targetAmount}
                 onChange={(e) => onTargetAmountChange(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
@@ -691,8 +692,9 @@ export function DuesPanel({
                           추가 납부 금액 (잔여 {formatWon(remaining)} 이내)
                           <input
                             type="number"
-                            lang="en"
+                            lang="ko"
                             data-input-lang="numeric"
+                            inputMode="decimal"
                             min={0}
                             max={remaining}
                             placeholder="부분 납부 시 입력"

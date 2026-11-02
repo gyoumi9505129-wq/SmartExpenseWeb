@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-/** 숫자·날짜 등 IME가 영문/숫자 쪽이 맞는 입력 */
+/** 숫자·날짜 등 — 키패드는 inputMode로, 언어(lang)는 한글로 유지 */
 const NUMERIC_INPUT_TYPES = new Set([
   "number",
   "date",
@@ -44,27 +44,45 @@ function isTextEntry(el: Element): el is HTMLElement {
   if (el instanceof HTMLTextAreaElement) return true;
   if (el.isContentEditable) return true;
   if (el instanceof HTMLInputElement) {
-    if (SKIP_INPUT_TYPES.has(el.type)) return false;
-    if (NUMERIC_INPUT_TYPES.has(el.type)) return false;
-    return true;
+    return !SKIP_INPUT_TYPES.has(el.type);
   }
   return false;
 }
 
-function applyInputLang(el: Element) {
-  if (!isTextEntry(el)) return;
-  el.lang = isNumericEntry(el) ? "en" : "ko";
-}
-
-function applyAll(root: ParentNode = document) {
-  root.querySelectorAll("input, textarea, [contenteditable]").forEach(applyInputLang);
+function ensureNumericInputMode(el: HTMLInputElement) {
+  if (NUMERIC_INPUT_MODES.has(el.inputMode)) return;
+  if (el.type === "tel") {
+    el.inputMode = "tel";
+    return;
+  }
+  if (
+    el.type === "number" ||
+    el.dataset.inputLang === "numeric" ||
+    el.dataset.inputLang === "en"
+  ) {
+    el.inputMode = "decimal";
+  }
 }
 
 /**
- * 텍스트 입력 기본 언어를 한글로 두고,
- * 날짜·금액 등 숫자 입력은 영문(숫자) 쪽으로 둔다.
- * (html lang=ko 상속 + 필드별 lang으로 모바일 키보드·IME 힌트)
+ * 모든 입력 언어 힌트는 한글(ko).
+ * 날짜·금액은 lang=en 을 쓰지 않고 inputMode 로 숫자 키패드만 유도한다.
+ * (lang=en 이면 모바일에서 한글로 안 돌아오는 경우가 많음)
  */
+function applyInputLang(el: Element) {
+  if (!isTextEntry(el)) return;
+  el.lang = "ko";
+  if (el instanceof HTMLInputElement && isNumericEntry(el)) {
+    ensureNumericInputMode(el);
+  }
+}
+
+function applyAll(root: ParentNode = document) {
+  root
+    .querySelectorAll("input, textarea, [contenteditable]")
+    .forEach(applyInputLang);
+}
+
 export function InputLangDefaults() {
   useEffect(() => {
     applyAll();

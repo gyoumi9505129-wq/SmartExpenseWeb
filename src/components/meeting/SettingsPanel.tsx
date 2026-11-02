@@ -253,7 +253,7 @@ export function SettingsPanel({ meetingId, meeting, onChanged }: Props) {
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
             />
             <input
-              lang="en"
+              lang="ko"
               data-input-lang="numeric"
               inputMode="numeric"
               autoComplete="off"

@@ -587,8 +587,9 @@ export function LedgerPanel({
                   : "금액"}
               <input
                 type="number"
-                lang="en"
+                lang="ko"
                 data-input-lang="numeric"
+                inputMode="decimal"
                 min={1}
                 max={
                   isRegularDues && selectedOpt
