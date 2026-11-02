@@ -20,7 +20,10 @@ import {
   todayIsoDate,
 } from "@/lib/format";
 import {
-  MEMBER_ROLE_LABEL,
+  MemberRoleBadge,
+  MemberRoleSelect,
+} from "@/components/meeting/MemberRoleBadge";
+import {
   MEMBER_STATUS_LABEL,
   type Meeting,
   type Member,
@@ -314,17 +317,13 @@ export function MembersPanel({
             </label>
             <label className="text-xs text-zinc-500">
               직책
-              <select
-                value={form.role}
-                onChange={(e) => patchForm({ role: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-              >
-                {Object.entries(MEMBER_ROLE_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              <div className="mt-1">
+                <MemberRoleSelect
+                  value={form.role}
+                  disabled={busy}
+                  onChange={(role) => patchForm({ role })}
+                />
+              </div>
             </label>
             <label className="text-xs text-zinc-500">
               거주
@@ -419,8 +418,6 @@ export function MembersPanel({
             {filtered.map((row) => {
               const statusLabel =
                 MEMBER_STATUS_LABEL[row.status] || row.status;
-              const roleLabel =
-                MEMBER_ROLE_LABEL[row.role] || row.role || "일반";
               const statusClass =
                 row.status === "ACTIVE"
                   ? "bg-emerald-50 text-emerald-700"
@@ -440,9 +437,7 @@ export function MembersPanel({
                     <p className="text-base font-semibold text-zinc-900">
                       {row.name}
                     </p>
-                    <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700">
-                      {roleLabel}
-                    </span>
+                    <MemberRoleBadge role={row.role} />
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusClass}`}
                     >
@@ -452,18 +447,12 @@ export function MembersPanel({
                   {canEdit ? (
                     <label className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
                       직책
-                      <select
+                      <MemberRoleSelect
                         value={row.role || "GENERAL"}
                         disabled={busy}
-                        onChange={(e) => changeRole(row, e.target.value)}
-                        className="rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-zinc-800"
-                      >
-                        {Object.entries(MEMBER_ROLE_LABEL).map(([k, v]) => (
-                          <option key={k} value={k}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
+                        size="sm"
+                        onChange={(role) => void changeRole(row, role)}
+                      />
                     </label>
                   ) : null}
                   <dl className="mt-3 space-y-1.5 text-sm text-zinc-600">
@@ -552,20 +541,14 @@ export function MembersPanel({
                     </td>
                     <td className="px-4 py-3">
                       {canEdit ? (
-                        <select
+                        <MemberRoleSelect
                           value={row.role || "GENERAL"}
                           disabled={busy}
-                          onChange={(e) => changeRole(row, e.target.value)}
-                          className="rounded border border-zinc-200 px-2 py-1 text-xs"
-                        >
-                          {Object.entries(MEMBER_ROLE_LABEL).map(([k, v]) => (
-                            <option key={k} value={k}>
-                              {v}
-                            </option>
-                          ))}
-                        </select>
+                          size="sm"
+                          onChange={(role) => void changeRole(row, role)}
+                        />
                       ) : (
-                        MEMBER_ROLE_LABEL[row.role] || row.role
+                        <MemberRoleBadge role={row.role} size="sm" />
                       )}
                     </td>
                     <td className="px-4 py-3">
