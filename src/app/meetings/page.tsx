@@ -468,7 +468,15 @@ function MeetingDetailInner() {
                     : "승인 요청"}
               </button>
             ) : null}
-            <AddToDesktopButton />
+            <AddToDesktopButton
+              title={
+                meeting?.name ||
+                (isSample ? SAMPLE_MEETING.name : "SmartExpense")
+              }
+              href={`/meetings/?id=${encodeURIComponent(
+                isSample && realMeeting ? realMeeting.id : meetingIdParam
+              )}`}
+            />
             <button
               type="button"
               disabled={busy}
