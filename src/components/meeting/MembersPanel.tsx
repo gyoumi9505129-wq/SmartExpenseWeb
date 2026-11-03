@@ -377,7 +377,14 @@ export function MembersPanel({
             <label className="text-xs text-zinc-500">
               관계
               <input
+                type="text"
                 lang="ko"
+                data-input-lang="ko"
+                inputMode="text"
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={form.relationship}
                 onChange={(e) => patchForm({ relationship: e.target.value })}
                 placeholder="예: 배우자, 자녀"

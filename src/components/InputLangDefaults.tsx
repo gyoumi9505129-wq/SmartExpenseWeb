@@ -68,11 +68,17 @@ function ensureNumericInputMode(el: HTMLInputElement) {
  * 모든 입력 언어 힌트는 한글(ko).
  * 날짜·금액은 lang=en 을 쓰지 않고 inputMode 로 숫자 키패드만 유도한다.
  * (lang=en 이면 모바일에서 한글로 안 돌아오는 경우가 많음)
+ * data-input-lang=ko 는 전화/숫자 필드 다음에 와도 텍스트·한글 IME로 되돌린다.
  */
 function applyInputLang(el: Element) {
   if (!isTextEntry(el)) return;
   el.lang = "ko";
-  if (el instanceof HTMLInputElement && isNumericEntry(el)) {
+  if (!(el instanceof HTMLInputElement)) return;
+  if (el.dataset.inputLang === "ko") {
+    el.inputMode = "text";
+    return;
+  }
+  if (isNumericEntry(el)) {
     ensureNumericInputMode(el);
   }
 }
