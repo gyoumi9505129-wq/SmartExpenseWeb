@@ -20,7 +20,6 @@ import { LedgerPanel } from "@/components/meeting/LedgerPanel";
 import { MembersPanel } from "@/components/meeting/MembersPanel";
 import { ReportPanel } from "@/components/meeting/ReportPanel";
 import { SettingsPanel } from "@/components/meeting/SettingsPanel";
-import { AddToDesktopButton } from "@/components/AddToDesktopButton";
 import { useAuth } from "@/contexts/AuthProvider";
 import {
   fetchMyAccessRequest,
@@ -468,15 +467,6 @@ function MeetingDetailInner() {
                     : "승인 요청"}
               </button>
             ) : null}
-            <AddToDesktopButton
-              title={
-                meeting?.name ||
-                (isSample ? SAMPLE_MEETING.name : "SmartExpense")
-              }
-              href={`/meetings/?id=${encodeURIComponent(
-                isSample && realMeeting ? realMeeting.id : meetingIdParam
-              )}`}
-            />
             <button
               type="button"
               disabled={busy}
