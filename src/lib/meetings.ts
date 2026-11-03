@@ -202,6 +202,8 @@ export async function fetchMembers(meetingId: string): Promise<Member[]> {
         residenceRegion: asString(data.residenceRegion),
         address: asString(data.address),
         detailAddress: asString(data.detailAddress),
+        emergencyContact: asString(data.emergencyContact),
+        relationship: asString(data.relationship),
       } satisfies Member;
     })
     .sort((a, b) => a.name.localeCompare(b.name, "ko"));

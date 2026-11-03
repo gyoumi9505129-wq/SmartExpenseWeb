@@ -44,6 +44,8 @@ export const SAMPLE_MEMBERS: Member[] = [
     residenceRegion: "대전",
     address: "",
     detailAddress: "",
+    emergencyContact: "",
+    relationship: "",
   },
   {
     id: "s2",
@@ -57,6 +59,8 @@ export const SAMPLE_MEMBERS: Member[] = [
     residenceRegion: "서울",
     address: "",
     detailAddress: "",
+    emergencyContact: "",
+    relationship: "",
   },
   {
     id: "s3",
@@ -70,6 +74,8 @@ export const SAMPLE_MEMBERS: Member[] = [
     residenceRegion: "경기도 광명",
     address: "",
     detailAddress: "",
+    emergencyContact: "",
+    relationship: "",
   },
 ];
 

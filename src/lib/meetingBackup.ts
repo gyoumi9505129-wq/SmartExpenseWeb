@@ -372,6 +372,8 @@ export async function restoreMeetingBackup(
         birthDate: "",
         address: m.address || "",
         detailAddress: m.detailAddress || "",
+        emergencyContact: m.emergencyContact || "",
+        relationship: m.relationship || "",
         isLunarBirth: false,
         selfEnrolled: false,
       });

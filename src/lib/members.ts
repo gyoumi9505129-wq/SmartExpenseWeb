@@ -22,6 +22,8 @@ export async function createMember(
     residenceRegion?: string;
     address?: string;
     detailAddress?: string;
+    emergencyContact?: string;
+    relationship?: string;
     joinDate?: string;
   }
 ): Promise<string> {
@@ -45,6 +47,8 @@ export async function createMember(
       birthDate: "",
       address: input.address?.trim() || "",
       detailAddress: input.detailAddress?.trim() || "",
+      emergencyContact: phoneDigits(input.emergencyContact || ""),
+      relationship: input.relationship?.trim() || "",
       isLunarBirth: false,
       linkedUid: "",
       selfEnrolled: false,
@@ -109,6 +113,8 @@ export async function updateMemberFields(
       | "residenceRegion"
       | "address"
       | "detailAddress"
+      | "emergencyContact"
+      | "relationship"
       | "joinDate"
     >
   >
@@ -123,6 +129,10 @@ export async function updateMemberFields(
   if (fields.address != null) payload.address = fields.address.trim();
   if (fields.detailAddress != null)
     payload.detailAddress = fields.detailAddress.trim();
+  if (fields.emergencyContact != null)
+    payload.emergencyContact = phoneDigits(fields.emergencyContact);
+  if (fields.relationship != null)
+    payload.relationship = fields.relationship.trim();
   if (fields.joinDate != null) payload.joinDate = fields.joinDate;
   await updateDoc(
     doc(

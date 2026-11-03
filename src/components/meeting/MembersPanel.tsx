@@ -39,6 +39,8 @@ type MemberFormState = {
   residenceRegion: string;
   address: string;
   detailAddress: string;
+  emergencyContact: string;
+  relationship: string;
   joinDate: string;
 };
 
@@ -50,6 +52,8 @@ const EMPTY_FORM: MemberFormState = {
   residenceRegion: "",
   address: "",
   detailAddress: "",
+  emergencyContact: "",
+  relationship: "",
   joinDate: todayIsoDate(),
 };
 
@@ -118,6 +122,8 @@ export function MembersPanel({
       residenceRegion: member.residenceRegion || "",
       address: member.address || "",
       detailAddress: member.detailAddress || "",
+      emergencyContact: formatPhoneDisplay(member.emergencyContact),
+      relationship: member.relationship || "",
       joinDate: member.joinDate || todayIsoDate(),
     });
     setFormOpen(true);
@@ -161,6 +167,8 @@ export function MembersPanel({
           residenceRegion: form.residenceRegion,
           address: form.address,
           detailAddress: form.detailAddress,
+          emergencyContact: form.emergencyContact,
+          relationship: form.relationship,
           joinDate,
         });
       } else {
@@ -172,6 +180,8 @@ export function MembersPanel({
           residenceRegion: form.residenceRegion,
           address: form.address,
           detailAddress: form.detailAddress,
+          emergencyContact: form.emergencyContact,
+          relationship: form.relationship,
           joinDate,
         });
       }
@@ -343,6 +353,35 @@ export function MembersPanel({
                 value={form.joinDate}
                 onChange={(joinDate) => patchForm({ joinDate })}
                 disabled={busy}
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              비상 연락처
+              <input
+                type="tel"
+                lang="ko"
+                data-input-lang="numeric"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={13}
+                value={form.emergencyContact}
+                onChange={(e) =>
+                  patchForm({
+                    emergencyContact: formatPhoneDigits(e.target.value),
+                  })
+                }
+                placeholder="010-0000-0000"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-zinc-500">
+              관계
+              <input
+                lang="ko"
+                value={form.relationship}
+                onChange={(e) => patchForm({ relationship: e.target.value })}
+                placeholder="예: 배우자, 자녀"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
               />
             </label>
             <div className="sm:col-span-2 lg:col-span-3">

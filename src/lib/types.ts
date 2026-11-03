@@ -66,6 +66,10 @@ export type Member = {
   residenceRegion: string;
   address: string;
   detailAddress: string;
+  /** 비상 연락처 (숫자만 저장) */
+  emergencyContact: string;
+  /** 비상 연락처와의 관계 */
+  relationship: string;
 };
 
 export type Transaction = {
