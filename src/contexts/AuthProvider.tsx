@@ -17,8 +17,12 @@ import {
   type User,
 } from "firebase/auth";
 import {
+  AUTH_IDLE_LOGOUT_MESSAGE,
   bindAuthUnloadGuards,
+  clearAuthActivity,
   clearFirebaseAuthStorageSync,
+  prepareAuthHardNavigation,
+  setIdleLogoutMessage,
 } from "@/lib/authSession";
 import { ensureAuthPersistence, getFirebaseAuth } from "@/lib/firebase";
 import { syncUserProfileFromAuth } from "@/lib/userProfile";
@@ -34,6 +38,8 @@ type AuthContextValue = {
   /** Google ID 토큰(GIS) → Firebase 세션 */
   signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** 유휴 타임아웃으로 인한 로그아웃 */
+  logoutDueToIdle: () => Promise<void>;
   clearError: () => void;
   setErrorMessage: (message: string | null) => void;
 };
@@ -152,19 +158,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(async () => {
+  const finishLogout = useCallback(async (opts?: { idle?: boolean }) => {
     setError(null);
     try {
       await signOut(getFirebaseAuth());
     } finally {
       setUser(null);
       setProfile(null);
+      clearAuthActivity();
       clearFirebaseAuthStorageSync();
+      if (opts?.idle) {
+        setIdleLogoutMessage(AUTH_IDLE_LOGOUT_MESSAGE);
+      }
       // 클라이언트 라우팅만 하면 배포 전 JS 번들이 메모리에 남아
-      // 이전 UI(설정 이력 리스트·관리 탭 누락 등)가 그대로 보일 수 있음 → 강제 새로고침
+      // 이전 UI가 그대로 보일 수 있음 → 강제 새로고침
+      prepareAuthHardNavigation();
       window.location.assign("/");
     }
   }, []);
+
+  const logout = useCallback(async () => {
+    await finishLogout();
+  }, [finishLogout]);
+
+  const logoutDueToIdle = useCallback(async () => {
+    await finishLogout({ idle: true });
+  }, [finishLogout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -175,10 +194,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSystemAdmin: isSystemAdmin(user?.email),
       signInWithGoogleIdToken,
       logout,
+      logoutDueToIdle,
       clearError: () => setError(null),
       setErrorMessage: (message) => setError(message),
     }),
-    [user, profile, loading, error, signInWithGoogleIdToken, logout]
+    [
+      user,
+      profile,
+      loading,
+      error,
+      signInWithGoogleIdToken,
+      logout,
+      logoutDueToIdle,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

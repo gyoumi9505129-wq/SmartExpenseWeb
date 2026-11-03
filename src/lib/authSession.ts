@@ -8,6 +8,14 @@
 
 const UNLOAD_GUARD_KEY = "se_auth_unload_guard";
 const HARD_NAV_KEY = "se_auth_hard_nav";
+const IDLE_MESSAGE_KEY = "se_auth_idle_message";
+const LAST_ACTIVITY_KEY = "se_auth_last_activity";
+
+/** 로그인 유휴 자동 로그아웃 (1시간) */
+export const AUTH_IDLE_TIMEOUT_MS = 60 * 60 * 1000;
+
+export const AUTH_IDLE_LOGOUT_MESSAGE =
+  "일정 시간 사용이 없어 로그아웃되었습니다. 다시 로그인해 주세요.";
 
 export function markAuthUnloadGuard(): void {
   try {
@@ -121,4 +129,49 @@ export function bindAuthUnloadGuards(): () => void {
     window.removeEventListener("pagehide", onHide);
     window.removeEventListener("pageshow", onShow);
   };
+}
+
+export function markAuthActivity(): void {
+  try {
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+  } catch {
+    // ignore
+  }
+}
+
+export function readLastAuthActivity(): number {
+  try {
+    const raw = localStorage.getItem(LAST_ACTIVITY_KEY);
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function clearAuthActivity(): void {
+  try {
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function setIdleLogoutMessage(message: string = AUTH_IDLE_LOGOUT_MESSAGE): void {
+  try {
+    sessionStorage.setItem(IDLE_MESSAGE_KEY, message);
+  } catch {
+    // ignore
+  }
+}
+
+/** 로그인 화면에서 한 번 읽고 지움 */
+export function consumeIdleLogoutMessage(): string | null {
+  try {
+    const msg = sessionStorage.getItem(IDLE_MESSAGE_KEY);
+    if (msg) sessionStorage.removeItem(IDLE_MESSAGE_KEY);
+    return msg;
+  } catch {
+    return null;
+  }
 }

@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/contexts/AuthProvider";
-import { prepareAuthHardNavigation } from "@/lib/authSession";
+import {
+  consumeIdleLogoutMessage,
+  prepareAuthHardNavigation,
+} from "@/lib/authSession";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
+  const [idleMessage, setIdleMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIdleMessage(consumeIdleLogoutMessage());
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -32,6 +40,12 @@ export default function LoginPage() {
           Android 앱과 동일한 Firebase 계정으로 로그인하면, PC·브라우저에서도
           장부·회비·회원을 조회하고 관리할 수 있습니다.
         </p>
+
+        {idleMessage ? (
+          <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm leading-6 text-amber-100">
+            {idleMessage}
+          </p>
+        ) : null}
 
         <div className="mt-8">
           {/* loading 중에도 버튼 노출 — 폰 LAN 에서 세션 확인이 멈춰도 로그인 가능 */}
