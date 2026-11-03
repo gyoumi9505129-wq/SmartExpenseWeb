@@ -16,6 +16,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SmartExpense — 스마트 모임 장부",
   description: "Android 앱과 동일한 Firebase로 모임 장부·회비를 관리합니다.",
+  applicationName: "SmartExpense",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#059669",
+  appleWebApp: {
+    capable: true,
+    title: "SmartExpense",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({
